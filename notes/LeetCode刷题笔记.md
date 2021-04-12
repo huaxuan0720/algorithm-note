@@ -1843,6 +1843,8 @@ public class Solution {
 
 ![](..\images\edit-distance-problem.PNG)
 
+
+
 #### 简化版本
 
 各项操作的代价都是1
@@ -1880,6 +1882,197 @@ public class Solution {
 ```
 
 #### 完整的版本
+
+```java
+class Solution{
+     /**
+     * 完整的编辑距离的求解
+     *
+     * @param s1：
+     * @param s2：
+     * @param dc：delete  cost, 删除一个字符的代价
+     * @param ic：insert  cost，插入一个字符的代价
+     * @param rc：replace cost，替换一个字符的代价
+     * @return
+     */
+    public static int fullMinDistance(String s1, String s2, int dc, int ic, int rc) {
+        char[] str1 = s1.toCharArray();
+        char[] str2 = s2.toCharArray();
+        int N = str1.length + 1;
+        int M = str2.length + 1;
+        int[][] dp = new int[N][M];
+        for (int i = 0; i < N; i++) {
+            dp[i][0] = i * dc;
+        }
+        for (int i = 0; i < M; i++) {
+            dp[0][i] = ic * i;
+        }
+        for (int i = 1; i < N; i++) {
+            for (int j = 1; j < M; j++) {
+                if (str1[i] == str2[j]) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = dp[i - 1][j - 1] + rc;
+                }
+                dp[i][j] = Math.min(dp[i][j], dp[i - 1][j] + dc);
+                dp[i][j] = Math.min(dp[i][j], dp[i][j - 1] + ic);
+            }
+        }
+        return dp[N - 1][M - 1];
+    }
+
+}
+```
+
+#### 相关题目
+
+给定两个字符串s1和s2，问s2最少删除多少字符可以成为s1的字串。
+
+如s1="abcde"，s2=“axbc"，因为删除x字符之后s2就是s1的字串了，所以返回1。
+
+##### 解法1：如果s2的长度很短
+
+求解出s2的所有的子序列，然后对每一个子序列判断是否是s1的字串，挑选出最长的一个序列，用原始的s2的长度减去这个最长的子序列的长度就是最后的答案。
+
+好一点的方法是按照s2的子序列的长度从大到小的顺序求解子序列，然后去匹配，如果找到了一个合适的就可以立刻返回。
+
+```java
+public class Solution {
+    public static int minCost(String s1, String s2) {
+        ArrayList<String> s2Subs = new ArrayList<>();
+        process(s2.toCharArray(), 0, "", s2Subs);
+        s2Subs.sort(new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o2.length() - o1.length();
+            }
+        });
+        for (String str : s2Subs) {
+            if (s1.indexOf(str) != -1) {
+                return s2.length() - str.length();
+            }
+        }
+        return s2.length();
+    }
+
+    private static void process(char[] str, int index, String s, ArrayList<String> list) {
+        if (index == str.length) {
+            list.add(s);
+            return;
+        }
+        process(str, index + 1, s, list);
+        process(str, index + 1, s + str[index], list);
+    }
+}
+```
+
+##### 解法二：如果s2很长，s1的长度比较小
+
+此时，我们可以先求解出s1的所有的字串，然后考察这些字串和s2的编辑距离，（假设此时只有插入行为，而没有删除和替换行为）
+
+```java
+public class Solution {
+    public static int minCost(String s1, String s2) {
+        int ans = Integer.MAX_VALUE;
+        char[] str2 = s2.toCharArray();
+        for (int start = 0; start < s1.length(); start++) {
+            for (int end = start + 1; end <= s1.length(); end++) {
+                ans = Math.min(ans, distance(str2, s1.substring(start, end).toCharArray()));
+            }
+        }
+        return ans;
+    }
+
+    // 从目标的字符串到s1的各个字串之间的距离，此时只可以采用删除的方法。
+    // 删除一个字符的代价定为1.
+    // 将无法构成的数据定为Integer.MAX_VALUE，表示无效
+    private static int distance(char[] str2, char[] s1sub) {
+        int row = str2.length;
+        int col = s1sub.length;
+        int[][] dp = new int[row][col];
+
+
+        dp[0][0] = str2[0] == s1sub[0] ? 0 : Integer.MAX_VALUE;
+        for (int j = 1; j < col; j++) {
+            dp[0][j] = Integer.MAX_VALUE;
+        }
+        for (int j = 1; j < row; j++) {
+            dp[j][0] = (dp[j - 1][0] != Integer.MAX_VALUE || str2[j] == s1sub[0]) ? j : Integer.MAX_VALUE;
+        }
+
+        for (int i = 1; i < row; i++) {
+            for (int j = 1; j < col; j++) {
+                dp[i][j] = Integer.MAX_VALUE;
+                if (dp[i - 1][j] != Integer.MAX_VALUE) {
+                    dp[i][j] = dp[i - 1][j] + 1;
+                }
+                if (dp[i - 1][j - 1] != Integer.MAX_VALUE && str2[i] == s1sub[j]) {
+                    dp[i][j] = Math.min(dp[i][j], dp[i - 1][j - 1]);
+                }
+            }
+        }
+        return dp[row - 1][col - 1];
+    }
+}
+```
+
+##### 优化：
+
+如果我们观察仔细一点，可以发现，我们每次对一个字串都建立一张新的dp表格，实际上可以对这一步进行优化。
+
+例如从0开始的所有字串，依次为基础构建的dp表格其实是逐渐增加的，这一步其实可以优化成如下，从0开始的剩下的字串，求解和目标串的编辑距离，然后对最后一列进行统计，计算出其中的最小值，然后对从1开始的剩下的字串，求解和目标串的编辑距离，统计最后一列的最小值，然后再依次循环下去。
+
+### 求解完全二叉树的节点数目（复杂度小于**O(N)**）
+
+### 解法：
+
+这一题可以根据完全二叉树的性质去求解。完全二叉树的特点是除了最后的一层节点之外，其他的层的节点都是满的，最后一层的节点都是全部从左向右排列，也就是尽可能向左靠齐。
+
+对于当前的节点，首先计算以当前节点为根节点的树的最大深度d1，然后计算右子树的最大深度d2，如果两者相等，那么可以判定左子树一定的满的，且左子树的深度一定是d1-1，这样就可以直接计算出左子树的节点数目，接着对右子树进行同样的操作。如果两个不等，那么一定可以确定右子树是满的，且深度就是d2，右子树的节点数目就可以直接计算出来，然后对左子树进行同样的操作，最后返回所有的节点数目。
+
+```java
+public class Solution {
+    public static int nodeSum(TreeNode head) {
+        if (head == null) {
+            return 0;
+        }
+        return bs(head, 1, mostLeftLevel(head, 1));
+    }
+
+    // node在第level层，h是总的深度（h永远不变，相当于是一个全局变量）
+    // 以node为根节点的完全二叉树，计算节点数目
+    private static int bs(TreeNode node, int level, int h) {
+        if (level == h) {
+            return 1;
+        }
+        // 如果右子树的深度达到了整棵树的最大深度，那么左子树一定是满的，所以对右子树进行递归，反之则对左子树进行递归
+        if (mostLeftLevel(node.right, level + 1) == h) {
+            return (1 << (h - level)) + bs(node.right, level + 1, h);
+        } else {
+            return (1 << (h - level - 1)) + bs(node.left, level + 1, h);
+        }
+    }
+
+    // 如果node在第level层
+    // 求以node为根节点的子树，最大深度是多少
+    // node为根节点的子树，是一棵完全二叉树
+    private static int mostLeftLevel(TreeNode node, int level) {
+        while (node != null) {
+            level += 1;
+            node = node.left;
+        }
+        return level - 1;
+    }
+}
+```
+
+#### 复杂度分析
+
+可以发现，我们每次都只对一侧的树进行递归，但是每一次都需要对子树的深度进行计算，由于深度h和节点总数目满足于$h \propto O(logN)$，因此，第一次递归的需要的时间是$logN$，第二次递归的时间是$log(N/2) = logN - 1$，第三次就是$logN - 2$，因此总的时间复杂度就是
+$$
+logN +(logN - 1) +(logN - 2)+... \propto O((logN)^2)
+$$
+
 
 
 
