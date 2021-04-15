@@ -1,361 +1,5 @@
 ## LeetCode刷题笔记
 
-### 数组接水问题
-
-[原题链接](https://leetcode-cn.com/problems/volume-of-histogram-lcci)
-
-给定一个直方图(也称柱状图)，假设有人从上面源源不断地倒水，最后直方图能存多少水量?直方图的宽度为 1。
-
-![](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2018/10/22/rainwatertrap.png)
-
-上面是由数组 [0,1,0,2,1,0,1,3,2,1,2,1] 表示的直方图，在这种情况下，可以接 6 个单位的水（蓝色部分表示水）。 感谢 Marcos 贡献此图。
-
-示例:
-
-```txt
-输入: [0,1,0,2,1,0,1,3,2,1,2,1]
-输出: 6
-```
-
-#### 最基础的解法
-
-在每一个位置都计算出左边最大的数字，和右边最大的数字，取这两个数字的较小者，为该位置可以积水的上限。在这个位置上，对其高度和上限进行判断，如果该位置的高度高于上限，则无法积水，反之则可以积水，积水的高度为上限和高度之间的差值。
-
-这个方法是最基础的方法，但是其时间复杂度较高，因为每次我们都需要向前和向后寻找最大值和最小值。此方法的时间复杂度是**O(N^2)**。空间复杂度是**O(1)**， 因为使用的都是常数项级别的变量数目。
-
-#### 改进一些的做法
-
-由于在每一个位置都要向前和向后循环去寻找左边和右边的最大值，我们就可以对数据进行一些预处理。我们使用两个和原数组相同长度的数组，分别保存每一个位置上的左边的最大值和右边的最大值，这样我们再依次循环到原数组的位置时，就可以直接在左边最大值的数组和右边最大值的数组中直接取数据。
-
-这样的方法避免了重复地去查找左右两侧的最大值，所以在时间复杂度上可以减小到**O(3N)**。因为只需要遍历有限次的数据，空间复杂度则是**O(2N)**，因为我们需要额外的两个和原数组等长的数据来保存左右两侧的最大值。
-
-#### 更加优化的一个做法
-
-在之前的方法中，我们在求解左侧的最大值的数组时，需要从前向后遍历数组，在求右侧的最大值数组时，需要从后向前便利。然后再从前向后或者后向前循环一次求解答案。那那么我们可以将其中的一个循环省掉吗，答案是可以。具体的代码如下。
-
-```java
-class Solution {
-    public int trap(int[] height) {
-        if (height.length < 3) return 0;
-        int[] right = new int[height.length];
-        right[height.length - 1] = 0;
-        for (int i = height.length - 2; i >= 0; i--) {
-            right[i] = Integer.max(height[i + 1], right[i + 1]);
-        }
-        int left = 0;
-        int total = 0;
-        for (int i = 0; i < height.length; i++) {
-            int minimum = Integer.min(left, right[i]);
-            total += Integer.max(0, minimum - height[i]);
-            left = Integer.max(left, height[i]);
-        }
-        return total;
-    }
-}
-```
-
-在代码中，我们首先求解右侧的最大值的数组，然后再用一个变量记录下左侧的最大值，从前向后循环，即可求解出最大值。
-
-这种方法省掉了一个最大值的数组，空间复杂度降低到了**O(N)**，时间复杂度降低到了**O(2N)**。
-
-#### 进一步思考
-
-我们能不能将最大值数据完全省略掉呢？答案是可以的。
-
-具体的代码如下。
-
-```java
-class Solution {
-    public int trap(int[] height) {
-        if (height == null || height.length < 3){
-            return  0;
-        }
-        int N = height.length;
-        int left = 1;
-        int right = N - 1;
-        int leftMax = height[0];
-        int rightMax = height[N - 1];
-
-        int water = 0;
-        while(left <= right){
-            if (leftMax < rightMax){
-                water += Integer.max(0, leftMax - height[left]);
-                leftMax = Integer.max(leftMax, height[left]);
-                left += 1;
-            }
-            else {
-                water += Integer.max(0, rightMax - height[right]);
-                rightMax = Integer.max(rightMax, height[right]);
-                right -= 1;
-            }
-        }
-        return water;
-    }
-}
-```
-
-具体的算法原理就是我们没有必要计算出最大值的数组。我们需要从两端开始遍历，从两端开始向中间位置靠拢，在遍历两端的数据时，优先选择数值小的一方进行数据更新。
-
-通过上述的代码优化，我们在时间复杂度为**O(N)**空间复杂度为**O(1)**的情况下求得了所需要的答案。
-
-### 随机数重新构造问题
-
-#### 解法
-
-规定一个随机函数f，此函数内部不可见，该函数等概率的返回1~5中的一个数字，现在要求利用该随机函数重新构造出一个等概率返回1~7中的一个数字的函数。
-
-关于重构随机数函数的问题，可以将问题归类到二进制的问题中。
-
-在上述问题的情况下，我们可以规定当随机函数f返回1和2的时候，我们认为该函数返回的是0，当随机函数f返回的是4和5的时候，我们认为该函数返回的是1，当随机函数f返回的是3的时候，我们重新利用该函数f构造。这样我们就获得了一个可以等概率返回1和0的二进制随机数生成器。接下来的步骤就很简单了，计算目标区间的数值最小需要多少位二进制标表示，然后利用该二进制生成器生成即可。
-
-Java代码如下：
-
-```java
-import java.util.HashMap;
-import java.util.Random;
-
-public class Solution {
-    public static int f(){
-        return (int) (Math.random() * 5) + 1;
-    }
-
-    public static int randomBinary(){
-        int number = f();
-        if (number < 3){
-            return 0;
-        }
-        if (number > 3){
-            return 1;
-        }
-        return randomBinary();
-    }
-
-    public static int myRandom(){
-        int ans = (randomBinary() << 2) + (randomBinary() << 1) + randomBinary();
-        while (ans > 6){
-            ans = (randomBinary() << 2) + (randomBinary() << 1) + randomBinary();
-        }
-        return ans + 1;
-    }
-    public static void main(String[] args) {
-        HashMap<Integer, Integer> count = new HashMap<>();
-        for (int i = 0;i<1000000;i++){
-            Integer a = myRandom();
-            if (count.containsKey(a)){
-                count.put(a, count.get(a) + 1);
-            }
-            else {
-                count.put(a, 1);
-            }
-        }
-        System.out.println(count);
-    }
-}
-```
-
-
-
-代码运行结果如下：
-
-```txt
-{1=142177, 2=142039, 3=143257, 4=142426, 5=143033, 6=143528, 7=143540}
-```
-
-### 搜索二叉树后序遍历重构
-
-给定一个搜索二叉树的后序遍历的数组序列。根据该序列重构该搜索二叉树。
-
-#### 解法
-
-这个问题解法很简单，利用搜索二叉树的后序遍历的顺序的特点即可构造一个递归算法。
-
-该序列的最后一个节点一定是整棵树的根节点，前面的数据则可以分为两个部分，根节点的左子树包含的节点和根节点的右子树包含的节点，然后找到左子树和右子树的分割的位置，该位置的左侧都是左子树的后序遍历的顺序，右侧都是右子树的后序遍历的序列。利用递归就很容易实现了。
-
-```java
-public class TreeNode {
-    int val;
-    TreeNode left;
-    TreeNode right;
-    TreeNode() {}
-    TreeNode(int val) { this.val = val; }
-    TreeNode(int val, TreeNode left, TreeNode right) {
-        this.val = val;
-        this.left = left;
-        this.right = right;
-    }
-}
-```
-
-
-
-```java
-import java.util.HashMap;
-import java.util.Random;
-
-public class Solution {
-    public static TreeNode process(int[] array, int L, int R) {
-        if (L > R) {
-            return null;
-        }
-        if (L == R) {
-            return new TreeNode(array[L]);
-        }
-        int mid = L - 1;
-        for (int i = L; i < R; i++) {
-            if (array[i] < array[R]) {
-                mid = i;
-            }
-        }
-        TreeNode node = new TreeNode(array[L]);
-        node.left = process(array, L, mid);
-        node.right = process(array, mid + 1, R - 1);
-        return node;
-    }
-}
-
-```
-
-该算法还有提升的空间，那就是我们在搜索分割点的位置的时候采用的是从后向前遍历的方法，此方法的效率不高，因此可以换成效率更高的二分搜索。
-
-```java
-import java.util.HashMap;
-import java.util.Random;
-
-public class Solution {
-    public static TreeNode process(int[] array, int L, int R) {
-        if (L > R) {
-            return null;
-        }
-        if (L == R) {
-            return new TreeNode(array[L]);
-        }
-        int mid = L - 1;
-        int left = L, right = R - 1;
-
-        while(left <= right){
-            int middle = left + ((right - left) >> 1);
-            if (array[middle] < array[R]){
-                mid = middle;
-                left = middle + 1;
-            } else {
-                right = middle - 1;
-            }
-        }
-
-        TreeNode node = new TreeNode(array[L]);
-        node.left = process(array, L, mid);
-        node.right = process(array, mid + 1, R - 1);
-        return node;
-    }
-}
-
-```
-
-### 数组构造问题
-
-输入一个int类型的整数N，构造一个长度为N的数组array，使得对于任意的**0<=i<j<k<N**，都满足如下的条件：$array[i] + array[j] != 2 * array[k]$。
-
-#### 解法
-
-这种构造数组的问题，可以思考的方向一般有两个，一个是先构造一个有序的数组，在按照一定的规则进行调整。另外一个是首先构造一个满足要求的长度较小的数组，在按照一定的规则去进行扩容，直到满足长度的要求。
-
-这一题的思路就是上述提到的方法之二，先构造一个长度较小的数组，在按照一定的规则进行扩容，直到长度符合要求。
-
-假设我们已经构造出了一个长度为3的最小的满足要求的数组，记为a[0], a[1], a[3]，满足要求a[0] + a[2] != 2 a[1]。很明显，只要我们对数组里面的数据进行相同的数值变化f，只要这个f函数是一个有效的非0的线性变换，那么对这个数组中的所有数进行这个函数变换f，那么变换之后，依然有，$f(a[0]) + f(a[2]) != 2 * f(a[0])$。所以，我们可以构造两个函数变换，第一个是$f(x) = 2x$，第二个是$f(x) = 2x + 1$。对上述的数组的数据分别应用这两个函数变幻，就可以得到两个数组a和b，那么我们将b的数据粘贴在a数组的后面，就可以将原来长度为3的数组扩容成长度为6的数组。
-
-理论上，我们可以选择很多个不同的函数变换的对，只要可以证明变换之后是满足要求的，并且拼在一起之后依然满足要求即可。
-
-### 按序的数值对的第k项
-
-长度为N的数组arr，一定可以组成$N^2$个数值对，例如数组$arr=[3, 1, 2]$，可以组成9组数值对，如$(3, 3), (3, 1), (3, 2), (1, 3), (1, 1), (1, 2), (2, 3), (2, 1), (2, 2)$。也就是任意两个数都有数值对，而且自己和自己也可以组成数值对。
-
-按照如下的规则堆数值对进行排序，按照第一维的数据从小到大进行排序，如果第一位数字相同，则按照第二维的数字进行排序，所以上面的数值对的排序结果是$(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)$。
-
-给定一个数组arr，和一个整数k（从0开始计数），返回第k小的键值对。‘
-
-#### 基础解法
-
-最最基础的办法是我们可以将这些数值对全部生成出来，保存在一个数组中，然后对这个数组进行排序，取第K个数值对即可。这样的算法的时间复杂度是$O(N^2 + N^2logN^2)$，第一个$N^2$表示的是生成数值对的时间，后一项是对数值对的排序的时间复杂度。空间复杂度是$O(N^2)$，表示的是保存数值对的数组的长度。
-
-#### 最基础的思考
-
-假设给定的数组中不含重复的数字，那么这一题就很简单，我们只需要对数组进行排序，然后对K进行整除和取模即可
-
-#### 更通用的情况
-
-假设给定的数组中包含重复的数字，我们可以知道的就是排序之后的数字的顺序就是我们数值对的第一维的数字的分布顺序。这一点和上述的基础的思考的解法是一致的。
-
-难点就在于我们如何计算出数值对的第二维数值。
-
-为什么我们不能用整除和取模的方法去计算第二维的数据？我们可以用数组$[1, 1, 2, 3]$来看。假设我们需要取第6个数值对，那么，排序之后，我们有
-
-$(1, 1), (1, 1), (1, 1), (1, 1), (1, 2), (1, 2), (1, 3), (1, 3), ...$
-
-6对4进行整除，得到数值对的第一维的数值的下标1， 对应的数值就是1，6对4进行取模，得到结果2，如果按照上面的方法，我们取数组的第三个数值2，也就是2，但是观察上面的数值对的序列结果可以发现，我们的答案并不是(1, 2)，而是（1， 3）。
-
-其实画个表格就很容易看出规律来，在此不赘述。
-
-假设我们的序列是$[1, 1, 2, 3, 3, 4, 5, 5, 5, 6]$，k取值83。
-
-那么按照上面的求解第一维数值的方法，我们可以计算出第一维数值的下标是
-
-
-
-```java
-import java.util.*;
-
-public class Solution {
-    public static int[] kthMinPair(int[] arr, int k) {
-        int length = arr.length;
-        if (k >= length * length) {
-            return null;
-        }
-        Arrays.sort(arr);
-
-        int firstNum = arr[k / length];
-        int lessFirstNumCount = 0;
-        int equalFirstNumCount = 0;
-        for (int i = 0; i < length && arr[i] <= firstNum; i++) {
-            if (arr[i] < firstNum) {
-                lessFirstNumCount += 1;
-            } else {
-                equalFirstNumCount += 1;
-            }
-        }
-        int rest = k - (lessFirstNumCount * length);
-        return new int[]{firstNum, arr[rest / equalFirstNumCount]};
-    }
-
-    public static int[] kthMinPairWithSort(int[] arr, int k) {
-        ArrayList<int[]> arrays = new ArrayList<>();
-        for (int i = 0; i < arr.length; i++) {
-            for (int j = 0; j < arr.length; j++) {
-                arrays.add(new int[]{arr[i], arr[j]});
-            }
-        }
-        arrays.sort((o1, o2) -> {
-            if (o1[0] > o2[0]) return 1;
-            if (o1[0] < o2[0]) return -1;
-            else return o1[1] - o2[1];
-        });
-        return arrays.get(k);
-    }
-
-    public static void main(String[] args) {
-        int[] arr = new int[100];
-        for (int i = 0; i < 100; i++) {
-            arr[i] = (int) (Math.random() * 100);
-        }
-        int k = (int) (Math.random() * 10000);
-        System.out.println(Arrays.toString(arr));
-        System.out.println(k);
-        System.out.println(Arrays.toString(kthMinPair(arr, k)));
-        System.out.println(Arrays.toString(kthMinPairWithSort(arr, k)));
-    }
-}
-
-```
-
 ### Top-K问题
 
 #### 解法一：排序加选择
@@ -838,362 +482,9 @@ public class TopKRealTime {
 
 #### 解法二：归并排序
 
-### 字符串摘要
 
-如果两个字符串（只包含小写字符a~z），所含字符种类完全一样，就算做一类，例如字符串abcd和abdcaa是一类，因为他们都含有相同的字符集abcd构成。
 
-现在给定一个字符串数组，统计一共出现过多少了字符串的类。
 
-#### 解法一：
-
-这一题本身不难，我们只要对所有的字符串进行字符的统计，注意这里只需要统计那些字符出现过即可，并将这些出现过的字符按序拼成一个字符串，作为一个摘要，放入一个set中，对所有的字符串进行摘要处理之后，返回set的长度即可。
-
-```java
-class Solution{
-    public static int types(String[] arr){
-        HashSet<String> types= new HashSet<>();
-
-        for (String s: arr){
-            char[] chs = s.toCharArray();
-            boolean[] map = new boolean[26];
-            for (char c: chs){
-                map[c - 'a'] = true;
-            }
-            StringBuilder key = new StringBuilder();
-            for (int i = 0;i<map.length;i++){
-                if (map[i]){
-                    key.append(String.valueOf(i + 'a'));
-                }
-            }
-            types.add(key.toString());
-        }
-        return types.size();
-    }
-}
-```
-
-#### 解法二：
-
-考虑到小写字符只有26个，那么我们可以考虑用一个int类型的数据来保存字符的出现的情况，int类型的长度是32位，是足够用来保存状态的。
-
-```java
-class Solution{
-    public static int types(String[] arr){
-        HashSet<Integer> types = new HashSet<>();
-        for (String s: arr){
-            char[] chars= s.toCharArray();
-            int key = 0;
-            for (char c: chars){
-                key = key | (1 << (c - 'a'));
-            }
-            types.add(key);
-        }
-        return types.size();
-    }
-}
-```
-
-#### 更多的思考
-
-如果考虑到大小写字符的集合，那么我们就可以用一个long类型的数据来保存，甚至更多的Base64集合。
-
-### 数组的子序列求和问题（动态规划）
-
-给定一个非负的数组array，和一个正整数m。计算array的所有的子序列的累加和与m进行取模运算之后的最大值。
-
-一个长度为n的数组的子序列有 $2^n$ 个。
-
-#### 最最基础的解法
-
-使用深度递归，求得每一个子序列的和，然后进行取模和比较，取最大的值即可。
-
-代码如下max1函数。
-
-```java
-public static int ans = 0;
-
-    public static int max1(int[] arr, int m){
-        helper(arr, 0, 0, m);
-        return ans;
-    }
-
-    public static void helper(int[] arr, int depth, int sum, int m){
-        if (depth == arr.length){
-            ans = Math.max(ans, sum % m);
-            return;
-        }
-        helper(arr, depth + 1, (sum + arr[depth]) % m, m);
-        helper(arr, depth + 1, (sum) % m, m);
-    }
-}
-```
-
-
-
-#### 如果数组中的每一个数字都不大，例如都小于20
-
-假设我们的数组是[5, 1, 2]。
-
-我们可以计算出数组中所有的元素的和，此处为8。
-
-可以构造成一个3行9列的二位数组，此处的3行表示的是数组的长度，9列表示的是0~8之间的所有的子序列的和。
-
-整个二位数组是一个Boolean类型的数组，那么我们可以构造出数组的每一个各自的含义，即我们有$dp[i][j]$的含义是利用数组的前i项能否构造出某一个子序列，该子序列的和是j。
-
-明白了数组的每一个格子的含义之后，我们就应该明确状态转移方程。
-
-联系到题目的具体含义，我们其实很容易想到状态转移的方程
-$$
-dp[i][j] = dp[i - 1][j] | dp[i - 1][j - arr[i]]
-$$
-
-$dp[i - 1][j]$ 表示的是我们当前在i的位置上，但是我们不想用arr[i]的数据，那么我们就直接将$dp[i - 1][j]$。剩下的就是我们想要使用arr[i]的数据，那么我们之前的i-1个数据就必须提供的和是j - arr[i]。那么两者只要有一种情况可以凑出j的数据，就证明利用前i个数据，我们可以凑出子序列的和j。
-
-理解上述的状态转移的方程之后，建立好表格，我们就直接按序遍历一遍即可。
-
-代码如下的max2函数。
-
-```java
-class Solution{
-    public static int ans = 0;
-
-    public static int max1(int[] arr, int m){
-        helper(arr, 0, 0, m);
-        return ans;
-    }
-
-    public static void helper(int[] arr, int depth, int sum, int m){
-        if (depth == arr.length){
-            ans = Math.max(ans, sum % m);
-            return;
-        }
-        helper(arr, depth + 1, (sum + arr[depth]) % m, m);
-        helper(arr, depth + 1, (sum) % m, m);
-    }
-
-    public static int max2(int[] arr, int m){
-        int sum = 0;
-        int N = arr.length;
-        for (int i = 0;i<N;i++){
-            sum += arr[i];
-        }
-        boolean[][] dp = new boolean[N][sum + 1];
-        // 填上第一列的数据
-        for (int i = 0; i<N;i++){
-            dp[i][0] = true;
-        }
-        // 处理第一行的数据
-        dp[0][arr[0]] = true;
-        
-        // 对剩下的所有的数据进行处理
-        for (int i = 1;i<N;i++){
-            for (int j = 1;j<=sum;j++){
-                // 当我不使用当前的数据也想凑出目标的j
-                dp[i][j] = dp[i - 1][j];
-                // 当我使用当前的数据想要凑出目标的j时，我们至少需要保证有足够的数据空间
-                if (j - arr[i] >= 0){
-                    dp[i][j] |= dp[i - 1][j - arr[i]];
-                }
-            }
-        }
-        // 遍历最后一行的数据，求得最大的取模之后的结果并返回
-        int ans = 0;
-        for (int i = 0;i<=sum;i++){
-            if (dp[N - 1][i]){
-                ans = Math.max(ans, i % m);
-            }
-        }
-        return ans;
-    }
-
-
-    public static void main(String[] args) {
-        int nums[] = new int[]{7, 5, 6, 4, 2, 3, 5, 2, 5};
-        int a = max1(nums, 107);
-        int b = max2(nums, 107);
-        System.out.println(a + " " + b);
-    }
-}
-```
-
-这一种解法适用于数字较小的情况，当我们给定的数组中的数值都很大的时候，很明显，我们上面的解法得到的累加和会变得很大，这样会导致很多无效的循环，因此，当我们给定的数据都很大的时候，上面的算法并不是一种高效的方法。
-
-#### 如果给定的取模数M不是很大的时候
-
-如果给定的数组里的数值都很大，但是给定的m不是很大的时候，例如107，那么我们可以考虑将上面的dp表格的列设置为$0 \to m-1$。表示的是所有的模m之后的情况。
-
-那么上面的代码需要进行一些小的改动。如下面的max3函数。
-
-```java
-import java.util.HashSet;
-
-public class Solution {
-    public static int max3(int[] arr, int m){
-        int N = arr.length;
-        boolean[][] dp = new boolean[N][m];
-        // 初始化第0列
-        for (int i = 0; i< N;i++){
-            dp[i][0] = true;
-        }
-        // 初始化第0行
-        dp[0][arr[0] % m] = true;
-        
-        // 依次计算剩下的格子
-        for (int i = 1;i<N;i++){
-            for (int j = 1;j<m; j++){
-                // 当我不使用当前的arr[i]的数据时
-                dp[i][j] = dp[i - 1][j];
-                
-                // 当我使用当前的arr[i]的数据时
-                if (j - arr[i] >= 0){
-                    dp[i][j] |= dp[i - 1][j - arr[i]];
-                } else {
-                    dp[i][j] |= dp[i - 1][j - arr[i] + m];
-                }
-            }
-        }
-        // 返回最后一行的最后一个是True的下标
-        int ans = 0;
-        for (int i = 0;i<m;i++){
-            if (dp[N - 1][i]){
-                ans = i;
-            }
-        }
-        return ans;
-    }
-}
-
-```
-
-#### 当数组长度不是很大，数组的累加和非常大，m也非常大的时候
-
-假设数组的累加和接近于$10^9$，m也接近于$10^9$。数组的长度不超过**35**。
-
-此时我们可以考虑分而治之的方法，我们取数组的前一半的数据进行求解，求解出所有的和m取模之后的数组，并保持有序，对后面的一半的数据进行求解，同样求解出一个有序的和m取模之后的数组。
-
-最后我们对两个数组里面的值进行两两比较，当在第一个数组中找到一个值为a的值，那么我们可以在第二个数组中利用二分的方法，求得不超过m-1-a的最大值b，然后保存下a+b的值，依次遍历，我们就可以求解出最后的结果。
-
-```java
-class Solution{
-    // 如果arr的累加和很大，m也很大
-    // 但是arr的长度不是很大
-    public static int max4(int[] arr, int m){
-        if (arr.length == 1){
-            return arr[0] % m;
-        }
-        int mid = (arr.length - 1) / 2;
-        TreeSet<Integer> sortSet1 = new TreeSet<>();
-        process4(arr, 0, 0, mid, m, sortSet1);
-        TreeSet<Integer> sortSet2 = new TreeSet<>();
-        process4(arr, mid + 1, 0, arr.length - 1, m, sortSet2);
-        int ans = 0;
-        for (Integer left : sortSet1){
-            ans = Math.max(ans, left + sortSet2.floor(m - 1 - left));
-        }
-        return ans;
-    }
-
-    // 求解所有的子序列的和并放到有序集合中
-    public static void process4(int[] arr, int index, int sum, int end, int m, TreeSet<Integer> treeSet){
-        if (index == end + 1){
-            treeSet.add(sum % m);
-        } else {
-            process4(arr, index + 1, sum, end, m, treeSet);
-            process4(arr, index + 1, sum + arr[index], end, m, treeSet);
-        }
-    }
-}
-```
-
-### 字符串循环交换
-
-给定一个字符串str和一个长度leftSize，请把str左侧leftSize的部分和右边的部分进行整体的交换。要求额外的空间复杂度是**O(1)**。
-
-例如str是abcdef，leftSize是4，那么交换之后的结果是efabcd。
-
-#### 解法一：
-
-**经典解法**：首先将左侧的leftSize的部分进行逆序操作，在对剩下的右侧的部分进行逆序操作，最后对整体进行逆序操作。
-
-```java
-class Solution{
-    public static void rotate(char[] chars, int leftSize){
-        reverse(chars, 0, leftSize - 1);
-        reverse(chars, leftSize, chars.length - 1);
-        reverse(chars, 0, chars.length - 1);
-    }
-
-    public static void reverse(char[] chars, int left, int right){
-        while(left < right){
-            char temp = chars[left];
-            chars[left] = chars[right];
-            chars[right] = temp;
-            left += 1;
-            right -= 1;
-        }
-    }
-    
-    public static void main(String[] args) {
-        char[] chars = new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g'};
-        rotate(chars, 4);
-        System.out.println(chars);
-
-    }
-}
-```
-
-#### 解法二
-
-```java
-class Solution{
-    public static void rotate1(char[] chars, int leftSize){
-        if (leftSize >= chars.length){
-            return;
-        }
-        int left = 0; // 记录左侧的需要交换的字符序列的左侧的起始位置
-        int right = chars.length - 1; // 记录右侧的需要交换的字符序列的右侧的终止位置
-        int lpart = leftSize; // 记录左侧的需要交换的字符序列的长度
-        int rpart = chars.length - leftSize; // 记录右侧的需要交换的字符序列的长度
-        int same = Math.min(lpart, rpart); // 记录需要交换的长度
-        int diff = lpart - rpart; // 记录左右两侧的字符序列的长度的差值
-        exchange(chars, left, right, same);
-        while (diff != 0){
-            if (diff > 0){ // 左侧更长
-                left += same;
-                lpart = diff;
-            } else { // 左右等长或者右侧更长
-                right -= same;
-                rpart = -diff;
-            }
-            same = Math.min(lpart, rpart);
-            diff = lpart - rpart;
-            exchange(chars, left, right, same);
-        }
-    }
-
-    public static void exchange(char[] str, int left, int right, int size){
-        int i = right - size + 1;
-        char temp;
-        while (size != 0){
-            temp = str[left];
-            str[left] = str[i];
-            str[i] = temp;
-            size -= 1;
-            left += 1;
-            i += 1;
-        }
-    }
-    
-    public static void main(String[] args) {
-        char[] chars = new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g'};
-        rotate1(chars, 4);
-        System.out.println(chars);
-
-    }
-}
-```
-
-这是一种改进之后的算法，主要是需要不断比较交换部分的长度，长度较短的一侧交换过去之后将一直固定，不再参与之后的调整，然后循环对剩下的部分进行交换，一直到需要交换的的两个字符段长度相同。
 
 ### 天际线及其相关问题
 
@@ -1226,182 +517,13 @@ jobArr3内部的数据，是严格的升序的，难度越高，报酬越高。
 
 （可以设置每一个节点保存前面所有的报酬的最大值和难度，并按照要求更新）
 
-### 背包问题
-
-背包容量为w，一共有n袋零食，第i袋的零食的体积为$v[i]$，其中$v[i] \gt 0$。在零食的综艺及不超过背包容量的情况下，一共有多少种零食放法。（总体积为0也算一种方法）
-
-#### 解法一：深度优先
-
-```java
-class Solution{
-    public static int snack(int[] arr, int w){
-        return process(arr, 0, w);
-    }
-    public static int process(int[] arr, int index, int rest){
-        if (rest < 0){
-            return -1;
-        }
-        if (index == arr.length){
-            return 1;
-        }
-        // rest >= 0
-        // 有零食index
-        // index号零食，要 还是 不要
-        int next1 = process(arr, index + 1, rest); // 不要index号零食
-        int next2 = process(arr, index + 1, rest - arr[index]); // 要index号零食
-        return next1 + (next2 == -1? 0: next2);
-    }
-}
-```
-
-#### 解法二：动态规划
-
-```java
-class Solution{
-    public static int snack1(int[] arr, int w) {
-        int N = arr.length;
-        int[][] dp = new int[N][w + 1];
-        for (int i = 0; i < N; i++) {
-            dp[i][0] = 1;
-        }
-
-        if (arr[0] <= w) {
-            dp[0][arr[0]] = 1;
-        }
-
-        for (int i = 1; i < N; i++) {
-            for (int j = 1; j <= w; j++) {
-                dp[i][j] = dp[i - 1][j];
-                if (j - arr[i] >= 0) {
-                    dp[i][j] += dp[i - 1][j - arr[i]];
-                }
-            }
-        }
-
-        int ans = 0;
-        for (int i = 0; i <= w; i++) {
-            ans += dp[N - 1][i];
-        }
-        return ans;
-    }
-}
-```
-
-#### 动态规划技巧之空间压缩
+#### 
 
 ### 最长公共子序列
 
 **注意，公共子序列和公共子串是不一样的问题，公共子序列不要求连续，公共字串必须要求连续。**
 
 
-
-### 最长公共子串
-
-```java
-class Solution{
-    // 动态规划的方法
-    public static String longest1(String s1, String s2) {
-        char[] str1 = s1.toCharArray();
-        char[] str2 = s2.toCharArray();
-        int[][] dp = new int[str1.length][str2.length];
-        
-        int endPosition = 0;
-        int maxLength = 0;
-        
-        // 初始化第0列
-        for (int i = 0; i < str1.length; i++) {
-            dp[i][0] = str1[i] == str2[0] ? 1 : 0;
-        }
-        
-        // 初始化第0行
-        for (int i = 0; i < str2.length; i++) {
-            dp[0][i] = str1[0] == str2[i] ? 1 : 0;
-        }
-        
-        // 依次循环
-        for (int i = 1; i < str1.length; i++) {
-            for (int j = 1; j < str2.length; j++) {
-                if (str1[i] == str2[j]){
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = 0;
-                }
-                // 记录下最长的子串的长度，并更新结束的位置
-                if (dp[i][j] > maxLength){
-                    maxLength = dp[i][j];
-                    endPosition = i;
-                }
-            }
-        }
-        return s1.substring(endPosition - maxLength + 1, endPosition + 1);
-    }
-
-    public static String longest2(String s1, String s2) {
-        char[] str1 = s1.toCharArray();
-        char[] str2 = s2.toCharArray();
-        int maxLength = 0; // 记录可以达到的最长的公共字串的长度
-        int col = str2.length - 1; // 出发点的列号
-        int row = 0; // 出发点的行号
-        int endPosition = -1; // 记录达到最长的公共子串的时候的末尾的位置
-
-        while (row < str1.length) {
-            int i = row;
-            int j = col;
-            int len = 0;
-            // 循环向右下方移动，每次移动一格
-            while (i < str1.length && j < str2.length) {
-                if (str1[i] == str2[j]) {
-                    len += 1;
-                } else {
-                    len = 0;
-                }
-                if (len > maxLength) {
-                    maxLength = len;
-                    endPosition = i;
-                }
-                // 向右下方移动
-                i += 1;
-                j += 1;
-            }
-            // 处理出发点的位置
-            if (col > 0) {
-                col -= 1;
-            } else {
-                row += 1;
-            }
-        }
-        return s1.substring(endPosition - maxLength + 1, endPosition + 1);
-    }
-
-    public static void main(String[] args) {
-        String s1 = "ABC1234567DEFG";
-        String s2 = "HIJKL1234567MNOP";
-        System.out.println(longest1(s1, s2));
-        System.out.println(longest2(s1, s2));
-
-    }
-}
-```
-
-#### 解法一：动态规划
-
-如上面的代码的longest1函数，我们建立一个动态规划的数组，数组的更新规则是，如果当前遍历的两个字符是相同的，那么就在左上角的格子上的数字加一，如果不是相同的，就直接置为0，这是因为公共子串不可能以不相同的字符结尾。
-
-这样一行一行地遍历下来，我们只要记录下出现过的最大值及其位置，等到循环截至之后去取对应的子串即可。
-
-#### 解法二：对动态规划的空间进行优化
-
-本质上，解法二依然是利用动态规划的思想去解决问题，但是在解决问题的基础上极大地优化了该问题的空间复杂度。
-
-我们可看到，实际上和其他的动态规划题目类似，我们只需要用两个固定长度的数组即可完成整张表格的构建，数组一保存上一行的所有数据，数组二则根据上一行的数据和截止到目前为止的遍历的位置进行更新即可，同样记录下最大值和取得最大值的位置。
-
-但是，我们可以更加优化空间复杂度，我们从整张表格的右上角开始，斜向右下依次遍历。开始遍历的位置开始时是在第0行，从右开始依次向左作为起点，如果达到了第0列，则开始对第0列开始从上往下依次选择遍历的起点。这样我们就可以如同上面的代码longest2函数那样，用有限的几个变量解决问题。
-
-算法的过程如下图
-
-![](..\images\lcst-longest2.PNG)
-
-上方的数字是循环的次数，也可以理解为每一个循环的起始位置。
 
 
 
@@ -1600,122 +722,7 @@ class Solution{
 }
 ```
 
-### 最长递增子序列
 
-#### 解法一：纯粹动态规划
-
-我们可以建立一个一维dp数组，$dp[i]$的含义是恰好以下标为i的数值结尾的递增子序列的最长的长度，依次对数据进行处理没然后返回dp数组中的最大的数值即可。
-
-```java
-public class Solution {
-
-    public static int lengthOfLIS(int[] nums) {
-        if (nums.length < 2) {
-            return nums.length;
-        }
-        // 建立一个和原数组等长的dp数组
-        int[] dp = new int[nums.length];
-        // 记录下能达到的最大的递增子序列的长度，也就是我们最后需要的答案
-        int ans = 1;
-        // 初始化
-        dp[0] = 1;
-        
-        // 依次对所有的数字进行遍历
-        for (int i = 1; i < nums.length; i++) {
-            int maxLength = 0;
-            // 对目前数值之前的所有的数据进行遍历，找到小于nums[i]并且有最长的子序列的长度
-            for (int j = i - 1; j >= 0; j--) {
-                if (nums[j] < nums[i]) {
-                    maxLength = Math.max(maxLength, dp[j]);
-                }
-            }
-            dp[i] = maxLength + 1;
-            if (dp[i] > ans) {
-                ans = dp[i];
-            }
-        }
-        return ans;
-    }
-}
-```
-
-#### 解法二：优化时间复杂度
-
-上面的解法的一个比较大的问题，在于当我们处于一个位置i的时候，总是需要一直向前循环找到合适的数据，这一层循环会将时间复杂度变成$O(N^2)$。实际上，是由办法将时间复杂度控制在$O(NlogN)$的。
-
-做法具体如下：
-
-我们同样需要一个记录下以当前的数值nums[i]结尾的数组dp，同时我们也需要一个用以保存长度和该长度下可以拥有的最小的结尾数据的数据结构。
-
-我们采用一个ends数组表示这个数据结构，$ends[i]$表示的是找到的所有长度为$i+1$的递增子序列中的最小的结尾的数值。听起来有些抽象，
-
-当$ends[2] = 4$时，i此时的数值时2，那么表示当前的所有的长度是i+1=3的递增子序列中，这些子序列中最小的结尾的数最小的就是4。
-
-可以看出，ends数组一定是升序存储的，最长的长度就是原数组的长度。
-
-当我们在原数组中遍历到一个新的节点cur的位置是，我们首先在ends数组中搜索最小的大于或等于当前的数值$nums[cur]$的最小的位置，假设没有找到则扩增ends数组，假设找到了，记作此时找到的下标为p，那么我们就更新此时的$ends[p]$为$nums[cur]$。这是因为我们在 原始驻足中找到了一个新的长度为$p+1$的结尾的更小的数字，所以我们需要更新。
-
-然后再来更新dp数组，我们需要找我们当前找到了的ends数组中对应的位置，我们就需要更新dp数组了。此时只要统计找到的在ends数组中的位置$p$之前有多少个数字即可（包含第p个数字）。这是因为我们能在ends数组中统计的是长度逐渐递增的结尾的数据，那么我们就一定可以确定的，当前的位置p一定包含于前面的数字，既然我已经更新了对应的ends数组，那么一定可以确定我们p之前的数字的个数就一定是dp数组的更新的值。
-
-又因为ends数组是有序的，那么我们就直接可以用二分的方法去搜索对应的位置，依靠这一步，我们成功将蒜贩的时间复杂度下调到了$O(NlogN)$。
-
-
-
-```java
-public class Solution {
-    public static int lengthOfLIS2(int[] nums) {
-        if (nums.length < 2) {
-            return nums.length;
-        }
-        // 建立两个和原始数组等长的数组，一个用作dp，一个用作ends
-        int[] dp = new int[nums.length];
-        int[] ends = new int[nums.length];
-        
-        // 初始化
-        ends[0] = nums[0];
-        dp[0] = 1;
-        
-        // 这一个变量记录的是ends数组最后一个有效数值的位置，endsLength + 1表示的是ends数组的有效部分的长度
-        int endsLength = 0;
-        int l = 0;
-        int r = 0;
-        int m = 0;
-        
-        // 依次循环
-        for (int i = 0; i < nums.length; i++) {
-            
-            // 利用二分查找来搜索对应的位置
-            l = 0;
-            r = endsLength;
-            while (l <= r) {
-                m = (l + r) / 2;
-                if (nums[i] > ends[m]) {
-                    l = m + 1;
-                } else {
-                    r = m - 1;
-                }
-            }
-            // 因为有可能没找到小于等于的数值，那么此时需要扩容，l指向的就是下一个需要扩容的位置。
-            endsLength = Math.max(endsLength, l);
-            ends[l] = nums[i];
-            dp[i] = l + 1;
-        }
-        return endsLength + 1;
-    }
-}
-```
-
-#### 例题：信封包装问题
-
-现在有一堆信封，每一个信封都有一个长度和宽度的信息，如果A信奉的长度和宽度都小于B信封，那么A信封就可以放入B信封内部，形成一个嵌套的信封。
-
-计算给定的信封数据中，可以达到的最大的嵌套层数。
-
-##### 解法：
-
-这一题本质上也是一个递增子序列的问题，我们首先先将信封按照信封的长度进行由小到大排序，如果两个信封的长度相同，则按照信封的宽度有大到小进行排序。
-
-此时信封的长度信息就可以忽略不计了，因为后一个信封在长度上一定可以包含前面的所有的信封，此时我们将所有的信封的宽度信息排列成一个数组，对这个数组求解最长的递增子序列即是最大的可以达到的嵌套层数。
 
 ### 子数组的最大累加和
 
@@ -1839,188 +846,7 @@ public class Solution {
 
 
 
-### 编辑距离
 
-![](..\images\edit-distance-problem.PNG)
-
-
-
-#### 简化版本
-
-各项操作的代价都是1
-
-```java
-public class Solution {
-    public int minDistance(String word1, String word2) {
-        char[] str1 = word1.toCharArray();
-        char[] str2 = word2.toCharArray();
-
-        int N = str1.length + 1;
-        int M = str2.length + 1;
-        int[][] dp = new int[N][M];
-        for (int i = 0; i < N; i++) {
-            dp[i][0] = i;
-        }
-        for (int j = 0; j < M; j++) {
-            dp[0][j] = j;
-        }
-        for (int i = 1; i < N; i++) {
-            for (int j = 1; j < M; j++) {
-                if (str1[i - 1] == str2[j - 1]) {
-                    dp[i][j] = dp[i - 1][j - 1];
-                } else {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                }
-                dp[i][j] = Math.min(dp[i][j], dp[i - 1][j] + 1);
-                dp[i][j] = Math.min(dp[i][j], dp[i][j - 1] + 1);
-            }
-        }
-        return dp[N - 1][M - 1];
-    }
-}
-
-```
-
-#### 完整的版本
-
-```java
-class Solution{
-     /**
-     * 完整的编辑距离的求解
-     *
-     * @param s1：
-     * @param s2：
-     * @param dc：delete  cost, 删除一个字符的代价
-     * @param ic：insert  cost，插入一个字符的代价
-     * @param rc：replace cost，替换一个字符的代价
-     * @return
-     */
-    public static int fullMinDistance(String s1, String s2, int dc, int ic, int rc) {
-        char[] str1 = s1.toCharArray();
-        char[] str2 = s2.toCharArray();
-        int N = str1.length + 1;
-        int M = str2.length + 1;
-        int[][] dp = new int[N][M];
-        for (int i = 0; i < N; i++) {
-            dp[i][0] = i * dc;
-        }
-        for (int i = 0; i < M; i++) {
-            dp[0][i] = ic * i;
-        }
-        for (int i = 1; i < N; i++) {
-            for (int j = 1; j < M; j++) {
-                if (str1[i] == str2[j]) {
-                    dp[i][j] = dp[i - 1][j - 1];
-                } else {
-                    dp[i][j] = dp[i - 1][j - 1] + rc;
-                }
-                dp[i][j] = Math.min(dp[i][j], dp[i - 1][j] + dc);
-                dp[i][j] = Math.min(dp[i][j], dp[i][j - 1] + ic);
-            }
-        }
-        return dp[N - 1][M - 1];
-    }
-
-}
-```
-
-#### 相关题目
-
-给定两个字符串s1和s2，问s2最少删除多少字符可以成为s1的字串。
-
-如s1="abcde"，s2=“axbc"，因为删除x字符之后s2就是s1的字串了，所以返回1。
-
-##### 解法1：如果s2的长度很短
-
-求解出s2的所有的子序列，然后对每一个子序列判断是否是s1的字串，挑选出最长的一个序列，用原始的s2的长度减去这个最长的子序列的长度就是最后的答案。
-
-好一点的方法是按照s2的子序列的长度从大到小的顺序求解子序列，然后去匹配，如果找到了一个合适的就可以立刻返回。
-
-```java
-public class Solution {
-    public static int minCost(String s1, String s2) {
-        ArrayList<String> s2Subs = new ArrayList<>();
-        process(s2.toCharArray(), 0, "", s2Subs);
-        s2Subs.sort(new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                return o2.length() - o1.length();
-            }
-        });
-        for (String str : s2Subs) {
-            if (s1.indexOf(str) != -1) {
-                return s2.length() - str.length();
-            }
-        }
-        return s2.length();
-    }
-
-    private static void process(char[] str, int index, String s, ArrayList<String> list) {
-        if (index == str.length) {
-            list.add(s);
-            return;
-        }
-        process(str, index + 1, s, list);
-        process(str, index + 1, s + str[index], list);
-    }
-}
-```
-
-##### 解法二：如果s2很长，s1的长度比较小
-
-此时，我们可以先求解出s1的所有的字串，然后考察这些字串和s2的编辑距离，（假设此时只有插入行为，而没有删除和替换行为）
-
-```java
-public class Solution {
-    public static int minCost(String s1, String s2) {
-        int ans = Integer.MAX_VALUE;
-        char[] str2 = s2.toCharArray();
-        for (int start = 0; start < s1.length(); start++) {
-            for (int end = start + 1; end <= s1.length(); end++) {
-                ans = Math.min(ans, distance(str2, s1.substring(start, end).toCharArray()));
-            }
-        }
-        return ans;
-    }
-
-    // 从目标的字符串到s1的各个字串之间的距离，此时只可以采用删除的方法。
-    // 删除一个字符的代价定为1.
-    // 将无法构成的数据定为Integer.MAX_VALUE，表示无效
-    private static int distance(char[] str2, char[] s1sub) {
-        int row = str2.length;
-        int col = s1sub.length;
-        int[][] dp = new int[row][col];
-
-
-        dp[0][0] = str2[0] == s1sub[0] ? 0 : Integer.MAX_VALUE;
-        for (int j = 1; j < col; j++) {
-            dp[0][j] = Integer.MAX_VALUE;
-        }
-        for (int j = 1; j < row; j++) {
-            dp[j][0] = (dp[j - 1][0] != Integer.MAX_VALUE || str2[j] == s1sub[0]) ? j : Integer.MAX_VALUE;
-        }
-
-        for (int i = 1; i < row; i++) {
-            for (int j = 1; j < col; j++) {
-                dp[i][j] = Integer.MAX_VALUE;
-                if (dp[i - 1][j] != Integer.MAX_VALUE) {
-                    dp[i][j] = dp[i - 1][j] + 1;
-                }
-                if (dp[i - 1][j - 1] != Integer.MAX_VALUE && str2[i] == s1sub[j]) {
-                    dp[i][j] = Math.min(dp[i][j], dp[i - 1][j - 1]);
-                }
-            }
-        }
-        return dp[row - 1][col - 1];
-    }
-}
-```
-
-##### 优化：
-
-如果我们观察仔细一点，可以发现，我们每次对一个字串都建立一张新的dp表格，实际上可以对这一步进行优化。
-
-例如从0开始的所有字串，依次为基础构建的dp表格其实是逐渐增加的，这一步其实可以优化成如下，从0开始的剩下的字串，求解和目标串的编辑距离，然后对最后一列进行统计，计算出其中的最小值，然后对从1开始的剩下的字串，求解和目标串的编辑距离，统计最后一列的最小值，然后再依次循环下去。
 
 ### 求解完全二叉树的节点数目（复杂度小于**O(N)**）
 
@@ -2072,6 +898,265 @@ public class Solution {
 $$
 logN +(logN - 1) +(logN - 2)+... \propto O((logN)^2)
 $$
+
+### 卡特兰数
+
+### LRU（Least Recently Used Algorithm）
+
+LRU是一种常见的内存设计中的页面置换算法，它是基于这样的一个假设，如果一个数据很久都没有被更新，那么在未来的一段时间内，该数据被更新的概率也会很小，如果一个数据经常被更新，那么在未来的一段时间内，该数据被更新的概率会很大。
+
+因此，对于LRU算法来说，我们需要时刻按照数据的最近的更新的时间进行有效的管理。
+
+本质上，该结构可以由一个双向链表实现，当我们对其中的一个数据进行更新之后，将这个数据移动到链表的头部（或者尾部，具体看个人的实现，下同），这样就可以使得双向链表的头部一直都是最近被更新的节点，链表的尾部一直都是最远的没有被更新的节点。
+
+```java
+public class Solution {
+    // 节点数据，保存一个键值对，可以泛型
+    public static class Node<K, V> {
+        public K key;
+        public V value;
+
+        public Node<K, V> last;
+        public Node<K, V> next;
+
+        public Node(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    // 双向链表
+    public static class NodeDoubleLinkedList<K, V> {
+        private Node<K, V> head;
+        private Node<K, V> tail;
+
+        // 构造函数
+        public NodeDoubleLinkedList() {
+            head = null;
+            tail = null;
+        }
+
+        // 新增节点
+        public void addNode(Node<K, V> newNode) {
+            if (newNode == null) {
+                return;
+            }
+            // newNode != null
+            if (head == null) { // 双向链表中一个节点都没有
+                head = newNode;
+                tail = newNode;
+            } else { // 将新增的节点加到最尾部
+                tail.next = newNode;
+                newNode.last = tail;
+                tail = newNode;
+            }
+        }
+        
+        // 将指定的节点移动到链表的尾部，表示最近被更新过
+        public void moveNodeToTail(Node<K, V> node) {
+            if (this.tail == null) {
+                return;
+            }
+
+            if (this.head == node) { // 当前的node是head节点
+                this.head = node.next;
+                this.head.last = null;
+            } else { // 当前的节点是中间的节点
+                node.last.next = node.next;
+                node.next.last = node.last;
+            }
+            // 统一更新指针
+            node.last = this.tail;
+            node.next = null;
+            this.tail.next = node;
+            this.tail = node;
+        }
+
+        // 移除head的节点，即移除最久远的未被使用的节点，并返回（返回的节点用于更新hash表）
+        public Node<K, V> removeHead() {
+            if (this.head == null) {
+                return null;
+            }
+            Node<K, V> res = this.head;
+            if (this.head == this.tail) { // 如果链表中只有一个节点，重置链表即可
+                this.head = null;
+                this.tail = null;
+            } else {
+                this.head = res.next;
+                res.next = null;
+                this.head.last = null;
+            }
+            return res;
+        }
+    }
+
+    public static class MyCache<K, V> {
+        private HashMap<K, Node<K, V>> keyNodeMap;
+
+        private NodeDoubleLinkedList<K, V> nodeList;
+
+        private final int capacity;
+
+
+        public MyCache(int capacity) {
+            if (capacity < 1) {
+                throw new RuntimeException("should be more than 0");
+            }
+            keyNodeMap = new HashMap<>();
+            nodeList = new NodeDoubleLinkedList<>();
+            this.capacity = capacity;
+        }
+
+        public V get(K key) {
+            if (keyNodeMap.containsKey(key)) {
+                Node<K, V> res = keyNodeMap.get(key);
+                nodeList.moveNodeToTail(res);
+                return res.value;
+            }
+            return null;
+        }
+
+        public void set(K key, V value) {
+            if (keyNodeMap.containsKey(key)) {
+                Node<K, V> node = keyNodeMap.get(key);
+                node.value = value;
+                nodeList.moveNodeToTail(node);
+            } else {
+                Node<K, V> newNode = new Node<>(key, value);
+                keyNodeMap.put(key, newNode);
+                nodeList.addNode(newNode);
+                if (keyNodeMap.size() == capacity + 1) {
+                    removeMostUnusedNode();
+                }
+            }
+        }
+
+        private void removeMostUnusedNode() {
+            Node<K, V> headNode = nodeList.removeHead();
+            keyNodeMap.remove(headNode.key);
+        }
+    }
+}
+
+```
+
+
+
+### 宽度优先遍历
+
+![image-20210413223917539](..\images\width-first-search.png)
+
+典型的宽度优先遍历的题目，因为题目中涉及的是求最短的路径。宽度优先遍历是一定可以找到最短的路径的，如果是深度优先遍历的话，需要计算出所有的路径才能得出结果。
+
+对于上面的题目，我们首先将上面的list中的数据进行预处理，建立起每一个字符串之间的联系，这个联系表示的是只变换其中的一个字符就可以将两个字符串连接起来。这样我们就可以很方便的进行当前节点的下一个子节点的寻找，只需要向hash表寻找即可。
+
+#### 数据预处理
+
+##### 方式一：传统方法
+
+首先拿出位置0的字符串，然后从位置1开始，逐个进行比较，如果两者只相差1个距离，那么就将位置0的字符串对应的hash表的数组内将位置1的字符串加进去，同时也将位置1的字符串对应的数组内加入位置0的字符串，然后拿位置0的字符串和位置2的字符串进行比较，以此类推。下一个大循环中，拿出位置1的字符串，将位置1的字符串和位置2的字符串进行比较，接着拿位置3的字符串比较，一直循环下去即可建立起一张hash表格。
+
+时间复杂度是$O(N^2 \times k)$，N是数组的长度，k是每一个字符串的长度。
+
+##### 方式二：启发式
+
+如果字符串中只包含了小写字母，那么我们可以对每一个字符串进行遍历，对每一个遍历到的字符串，对每一个位置上的字符进行更改，例如abc，对第0个位置的字符进行更改，可以更改成bbc，然后检查bbc是否在原始的数组中（此前可以把数组中的所有数据放进hash表里，以提升检索速度），如果在的话，就将bbc放进abc对应的数组中，同时也将abc放进bbc对应的数组中，如果不在的话，就什么也不做。然后再将第0个字符边长cbc，接着进行判断，接着是dbc，以此类推。对第0个字符的更改25次，再对第1个位置的字符更改25次，也进行相同的判断，以此类推。最后也可以建立起一张符合要求的hash表。
+
+时间复杂度是$O(25NK)$，N是数组的长度，k是每一个字符串的长度，25表示的是具体的变换次数。
+
+对于上面的两个预处理方法，需要根据具体的题目进行选择。
+
+```java
+public class Solution {
+    public static List<List<String>> findMinPaths(String start, String end, List<String> list) {
+        list.add(start);
+        // 预处理，建立起每一个节点的下一个节点的hash表
+        HashMap<String, ArrayList<String>> nexts = getNexts(list);
+
+        // 计算从其实节点到所有节点的最近的距离，采用的是宽度优先遍历的方法
+        HashMap<String, Integer> distances = getDistances(start, nexts);
+
+        // 利用深度优先遍历，来计算所有到达目标节点的最短的路劲（可能不止一条）
+        LinkedList<String> pathList = new LinkedList<>();
+        List<List<String>> res = new ArrayList<>();
+        getShortestPaths(start, end, nexts, distances, pathList, res);
+        return res;
+    }
+
+    private static HashMap<String, ArrayList<String>> getNexts(List<String> words) {
+        Set<String> dict = new HashSet<>(words);
+
+        HashMap<String, ArrayList<String>> nexts = new HashMap<>();
+        for (int i = 0; i < words.size(); i++) {
+            nexts.put(words.get(i), getNext(words.get(i), dict));
+        }
+        return nexts;
+    }
+
+    private static ArrayList<String> getNext(String word, Set<String> dict) {
+        ArrayList<String> res = new ArrayList<>();
+        char[] chs = word.toCharArray();
+        for (char cur = 'a'; cur <= 'z'; cur++) {
+            for (int i = 0; i < chs.length; i++) {
+                if (chs[i] != cur) {
+                    char tmp = chs[i];
+                    chs[i] = cur;
+                    String ans = String.valueOf(chs);
+                    if (dict.contains(ans)) {
+                        res.add(ans);
+                    }
+                    chs[i] = tmp;
+                }
+            }
+        }
+        return res;
+    }
+
+    private static HashMap<String, Integer> getDistances(String start, HashMap<String, ArrayList<String>> nexts) {
+        HashMap<String, Integer> distances = new HashMap<>();
+        distances.put(start, 0);
+        Queue<String> queue = new LinkedList<>();
+        queue.add(start);
+        HashSet<String> set = new HashSet<>();
+        set.add(start);
+        while (!queue.isEmpty()) {
+            String cur = queue.poll();
+            for (String next : nexts.get(cur)) {
+                if (!set.contains(next)) {
+                    distances.put(next, distances.get(cur) + 1);
+                    queue.add(next);
+                    set.add(next);
+                }
+            }
+        }
+        return distances;
+    }
+
+    // 深度优先遍历
+    private static void getShortestPaths(String cur, String to,
+                                         HashMap<String, ArrayList<String>> nexts,
+                                         HashMap<String, Integer> distances,
+                                         LinkedList<String> path,
+                                         List<List<String>> res) {
+        path.add(cur);
+        if (to.equals(cur)) {
+            res.add(new LinkedList<>(path));
+        } else {
+            for (String next : nexts.get(cur)) {
+                if (distances.get(next) == distances.get(cur) + 1) {
+                    getShortestPaths(next, to, nexts, distances, path, res);
+                }
+            }
+        }
+        path.pollLast();
+    }
+```
+
+### 深度优先遍历
+
+
+
+
 
 
 
