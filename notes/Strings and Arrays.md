@@ -423,3 +423,15 @@ public class Solution {
 
 ![image-20210414231506183](..\images\fast-slow-pointers.PNG)
 
+![image-20210415214638285](..\images\slow-fast-pointers-answer1.png)
+
+![image-20210415221752428](..\images\slow-fast-pointers-answer2.png)
+
+![image-20210415222049235](..\images\slow-fast-pointers-answer3.png)
+
+## 链表
+
+### 回文链表
+
+#### 解法一：使用栈
+
