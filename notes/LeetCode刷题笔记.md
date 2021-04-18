@@ -623,105 +623,6 @@ public class FolderTree {
 
 ```
 
-### 二叉树的前序中序后序遍历
-
-给定一棵二叉树，其中不包含重复的节点，并且给定了这棵树的中序遍历的结果数组和先序遍历的结果数组，返回对应的后序遍历的结果数组。
-
-#### 解法一：
-
-直接使用两个数组建立对应的二叉树，然后进行后序遍历即可。这招那个方法的成本比较高，因为涉及到二叉树的建立，在内存上的开销会比较大。
-
-代码略
-
-#### 解法二：
-
-直接利用前序遍历和中序遍历的特点去分割数组，然后在原地调整数组。
-
-```java
-class Solution{
-    public static int[] preIn2Pos(int[] pre, int[] in){
-        if (pre == null || in==null||pre.length!=in.length){
-            return null;
-        }
-        int N = pre.length;
-        int[] pos = new int[N];
-        process1(pre, 0, N - 1, in, 0, N - 1, pos, 0, N - 1);
-        return pos;
-    }
-
-    // 递归解决问题，每一个数组都给定一个起始位置和结束位置（含）
-    private static void process1(int[] pre, int l1, int r1,
-                                 int[] in, int l2, int r2,
-                                 int[] pos, int l3, int r3){
-        if (l1 > r1){
-            return;
-        }
-        if (l1 == r1){
-            pos[l3] = pre[l1];
-            return;
-        }
-        pos[r3] = pre[l1];
-        int mid = l2;
-        for(; mid <= r2; mid ++){
-            if (in[mid] == pre[l1]){
-                break;
-            }
-        }
-        int leftSize = mid - l2;
-        process1(pre, l1 + 1, l1 + leftSize, in, l2, mid - 1, pos, l3, l3 + leftSize - 1);
-        process1(pre, l1 + leftSize + 1, r1, in, mid + 1, r2, pos, l3 + leftSize, r3 - 1);
-    }
-    public static void main(String[] args) {
-        int[] pos = preIn2Pos(new int[]{1, 2, 4, 5, 3, 6, 7}, new int[]{4, 2, 5, 1, 6, 3, 7});
-        for (int i: pos){
-            System.out.println(i);
-        }
-    }
-}
-```
-
-#### 解法三：
-
-上面的解法利用了中序遍历和前序遍历的特点，实际上还有一定的改进空间。在对中序遍历的结果数组进行划分的时候，我们采用的是从前向后遍历的方法，实际上我们可以建立一张表格，记录下每一个数字的位置，在对中序遍历的结果数组进行划分的时候，直接在表格中取值即可。
-
-```java
-class Solution{
-    public static int[] preIn2Pos2(int[] pre, int[] in) {
-        if (pre == null || in == null || pre.length != in.length) {
-            return null;
-        }
-        int N = pre.length;
-
-        HashMap<Integer, Integer> inMap = new HashMap<>();
-        for (int i = 0; i < N; i++) {
-            inMap.put(in[i], i);
-        }
-
-        int[] pos = new int[N];
-        process2(pre, 0, N - 1, in, 0, N - 1, pos, 0, N - 1, inMap);
-        return pos;
-    }
-
-    private static void process2(int[] pre, int l1, int r1,
-                                 int[] in, int l2, int r2,
-                                 int[] pos, int l3, int r3,
-                                 HashMap<Integer, Integer> inMap) {
-        if (l1 > r1) {
-            return;
-        }
-        if (l1 == r1) {
-            pos[l3] = pre[l1];
-            return;
-        }
-        pos[r3] = pre[l1];
-        int mid = inMap.get(pre[l1]);
-        int leftSize = mid - l2;
-        process2(pre, l1 + 1, l1 + leftSize, in, l2, mid - 1, pos, l3, l3 + leftSize - 1, inMap);
-        process2(pre, l1 + leftSize + 1, r1, in, mid + 1, r2, pos, l3 + leftSize, r3 - 1, inMap);
-    }
-}
-```
-
 
 
 ### 子数组的最大累加和
@@ -1154,7 +1055,13 @@ public class Solution {
 
 ### 深度优先遍历
 
+### 纸条折叠
 
+![img](..\images\paper-folding)
+
+![img](..\images\paper-folding2)
+
+![img](..\images\paper-folding3.png)
 
 
 

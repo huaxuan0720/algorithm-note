@@ -435,3 +435,218 @@ public class Solution {
 
 #### 解法一：使用栈
 
+#### 解法二：使用数组长度一半的栈
+
+```java
+public class Solution {
+    public static boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null) {
+            return true;
+        }
+        
+        // 寻找链表的中间结点
+        ListNode right = head.next;
+        ListNode cur = head;
+        while (cur.next != null && cur.next.next != null) {
+            right = right.next;
+            cur = cur.next.next;
+        }
+        
+        // 使用stack倒置后半部分的节点
+        Stack<ListNode> stack = new Stack<>();
+        while (right != null) {
+            stack.push(right);
+            right = right.next;
+        }
+        while (!stack.isEmpty()) {
+            if (head.val != stack.pop().val) {
+                return false;
+            }
+            head = head.next;
+        }
+        return true;
+    }
+}
+```
+
+
+
+#### 解法三：掉转链表后半部分的顺序
+
+```java
+public class Solution {
+    public static boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null) {
+            return true;
+        }
+        ListNode n1 = head;
+        ListNode n2 = head;
+        while (n2.next != null && n2.next.next != null) { // find the mid node
+            n1 = n1.next;
+            n2 = n2.next.next;
+        }
+
+        n2 = n1.next;
+        n1.next = null;
+        ListNode n3 = null;
+        while (n2 != null) { // revert the right part
+            n3 = n2.next;
+            n2.next = n1;
+            n1 = n2;
+            n2 = n3;
+        }
+
+        n3 = n1;
+        n2 = head;
+        boolean res = true;
+        while (n1 != null && n2 != null) { // check palindrome
+            if (n1.val != n2.val) {
+                res = false;
+                break;
+            }
+            n1 = n1.next;
+            n2 = n2.next;
+        }
+        // recover the list
+        n1 = n3.next;
+        n3.next = null;
+        while (n1 != null) {
+            n1.next = n3;
+            n2 = n1;
+            n1 = n2;
+        }
+        return res;
+    }
+}
+```
+
+### 链表的快速排序的partition
+
+#### 解法：
+
+### 带有随机指针的链表的深度复制
+
+#### 解法一：使用map保存新的链表节点和老节点的关系
+
+```java
+public class Solution {
+    static class RandomNode {
+        int value;
+        RandomNode next;
+        RandomNode random;
+
+        RandomNode(int value) {
+            this.value = value;
+            next = null;
+            random = null;
+        }
+    }
+
+    public static RandomNode copyListWithRandom(RandomNode head) {
+        HashMap<RandomNode, RandomNode> map = new HashMap<>();
+        RandomNode cur = head;
+        while (cur != null) {
+            map.put(cur, new RandomNode(cur.value));
+            cur = cur.next;
+        }
+        cur = head;
+        while (cur != null) {
+            map.get(cur).next = map.get(cur.next);
+            map.get(cur).random = map.get(cur.random);
+            cur = cur.next;
+        }
+        return map.get(head);
+    }
+}
+```
+
+
+
+#### 解法二：将新节点插入到老节点的后面
+
+![image-20210418162503719](..\images\random-linkedlist-deep-copy)
+
+```java
+public class Solution {
+    static class RandomNode {
+        int value;
+        RandomNode next;
+        RandomNode random;
+
+        RandomNode(int value) {
+            this.value = value;
+            next = null;
+            random = null;
+        }
+    }
+
+    public static RandomNode copyListWithRandom(RandomNode head) {
+        if (head == null) {
+            return null;
+        }
+        RandomNode cur = head;
+        RandomNode next = null;
+
+        // copy node and link to every node
+        while (cur != null) {
+            next = cur.next;
+            cur.next = new RandomNode(cur.value);
+            cur.next.next = next;
+            cur = next;
+        }
+        cur = head;
+        RandomNode curCopy = null;
+        while (cur != null) {
+            next = cur.next.next;
+            curCopy = cur.next;
+            curCopy.random = cur.random != null ? cur.random.next : null;
+            cur = next;
+        }
+        RandomNode res = head.next;
+        cur = head;
+
+        // split these two linked list
+        while (cur != null) {
+            next = cur.next.next;
+            curCopy = cur.next;
+            cur.next = next;
+            curCopy.next = next != null ? next.next : null;
+            cur = next;
+        }
+        return res;
+    }
+}
+```
+
+### 环状链表的相关问题
+
+![img](..\images\clip_image002.jpg)
+
+![img](..\images\clip_image004.jpg)
+
+![img](..\images\clip_image006.jpg)
+
+![img](..\images\clip_image008.jpg)
+
+![img](..\images\clip_image010.jpg)
+
+![img](..\images\clip_image012.jpg)
+
+![img](..\images\clip_image014.jpg)
+
+### 约瑟夫环
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
