@@ -429,6 +429,132 @@ public class Solution {
 
 ![image-20210415222049235](..\images\slow-fast-pointers-answer3.png)
 
+### 次数大于数组长度的一半的元素
+
+时间复杂度**O(N)**，空间复杂度**O(1)**。
+
+#### 解法：
+
+我们对这个问题定如下的一个规则：**一次删掉数组中两个不同的数**。
+
+那么我们对数组应用上面的规则之后，只会出现两个结果，
+
+1、没有数字剩下来，那么可以确定的是，一定不存在一个元素的出现次数大于数组长度的一半。
+
+2、只会留下来一种数字，那么我们就对该数字在原数组中进行统计，如果出现的次数确实大于数组长度的一半，那么就可以确定该数据存在。反之如果出现的次数不大于数组长度的一半，那么就不存在对应的数据。例如，如果数组是1， 2， 3， 4， 5，那么一次删除两个不同的数据之后，就会剩下5，很明显，这种情况不存在出现次数大于数组长度一半的数据，因此需要对数据进行额外的判断。
+
+```java
+public class Solution {
+    public static int halfMajor(int[] arr) {
+        int candidate = 0;
+        int hp = 0; // 血量，如果血量为0，则表示之前的所有数据全部都被一对一对地删除了
+
+        // 一次删掉两个不同的数据
+        for (int value : arr) {
+            if (hp == 0) { // 如果血量是0，则重新立起一个可能的候选人
+                candidate = value;
+                hp = 1;
+            } else if (value == candidate) { // 如果候选不是0，并且和当前的候选人的数据相同，则增加血量
+                hp += 1;
+            } else { // 反之则减少血量，如果血量是0，候选人则被杀死，表示之前的所有数据全部都被一对一对地删除了
+                hp -= 1;
+            }
+        }
+
+        if (hp == 0) {
+            return -1;
+        }
+
+        // 如果有数据剩下，则单独进行判断
+        hp = 0;
+        for (int value : arr) {
+            if (value == candidate) {
+                hp += 1;
+            }
+        }
+        if (hp > arr.length / 2) {
+            return candidate;
+        } else {
+            return -1;
+        }
+    }
+}
+```
+
+#### 更多的思考
+
+如果我们需要寻找出现次数大于**N/K**的元素（K是一个给定的参数），那么和上面的类似，我们最多会拥有K-1个数据符合要求，和上面的情况类似，我们需要维护一个长度为K-1的数据表格，记录元素和对应的血量，对全部的数据进行遍历，如果此时表格中没有足够的数据，且当前的数据不在表格中，那么我们就将当前的数据放入表格，并且将它的血量设置为1，如果当前的数据在表格中，就将表格中对应的血量加1，如果当前的数据不在表格中且表格已经满了，那么我们就将表格中所有的数据的血量减1，如果血量变成了0，就将该数据踢出表格，表示该数据已经被杀死。此时就相当于我们每次都删除掉K个不同的数据，所以表格满了且当前的数据不存在在表格中时，我们就把表格的数据全部拉上1个垫背。
+
+这样最后的表格中最多会剩下K-1个数据，我们就依次对所有的数据和上面的解法一样，进行额外的遍历，如果当前的数据是出现的次数确实是大于N/K的，那么就把这个数据放在答案中，然后将所有的答案返回即可。
+
+```java
+public class Solution {
+    public static List<Integer> kMajor(int[] arr, int k) {
+        List<Integer> ans = new ArrayList<>();
+        if (k < 2) {
+            return ans;
+        }
+
+        // 候选表，数据的个数最多是k-1
+        HashMap<Integer, Integer> candidates = new HashMap<>();
+        for (int i = 0; i != arr.length; i++) {
+            if (candidates.containsKey(arr[i])) {
+                candidates.put(arr[i], candidates.get(arr[i]) + 1);
+            } else {
+                if (candidates.size() == k - 1) {
+                    allCandidatesMinusOne(candidates);
+                } else {
+                    candidates.put(arr[i], 1);
+                }
+            }
+        }
+
+        HashMap<Integer, Integer> reals = getReals(arr, candidates);
+        for (Map.Entry<Integer, Integer> set : candidates.entrySet()) {
+            Integer key = set.getKey();
+            if (reals.get(key) > arr.length / k) {
+                ans.add(key);
+            }
+        }
+        return ans;
+    }
+
+    // 对所有的数据进行减1的操作，拉上这些数据垫背
+    private static void allCandidatesMinusOne(HashMap<Integer, Integer> hashMap) {
+        List<Integer> removeList = new LinkedList<>();
+        for (Map.Entry<Integer, Integer> set : hashMap.entrySet()) {
+            Integer key = set.getKey();
+            Integer value = set.getValue();
+            if (value == 1) {
+                removeList.add(key);
+            }
+            hashMap.put(key, value - 1);
+        }
+        for (Integer removeKey : removeList) {
+            hashMap.remove(removeKey);
+        }
+    }
+
+
+    // 重新进行统计
+    private static HashMap<Integer, Integer> getReals(int[] arr, HashMap<Integer, Integer> candidates) {
+        HashMap<Integer, Integer> reals = new HashMap<>();
+        for (int cur : arr) {
+            if (candidates.containsKey(cur)) {
+                if (reals.containsKey(cur)) {
+                    reals.put(cur, reals.get(cur) + 1);
+                } else {
+                    reals.put(cur, 1);
+                }
+            }
+        }
+        return reals;
+    }
+}
+```
+
+
+
 ## 链表
 
 ### 回文链表
