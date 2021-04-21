@@ -6,7 +6,97 @@
 
 ### 应用最多的树：二叉树
 
-#### 二叉树的遍历：前序，中序，后序，层次
+#### 二叉树的遍历（递归）：前序，中序，后序，
+
+#### 二叉树的遍历：层次
+
+#### 二叉树的遍历（使用栈，非递归）
+
+##### 前序使用栈
+
+##### 中序使用栈
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+    public static void inOrder(TreeNode head){
+        out.println("in-order");
+        if (head != null){
+            Stack<TreeNode> stack = new Stack<>();
+            while (!stack.isEmpty() || head != null){
+                if (head != null){
+                    stack.push(head);
+                    head = head.left;
+                } else {
+                    head = stack.pop();
+                    out.print(head.val + " ");
+                    head = head.right;
+                }
+            }
+        }
+        out.println();
+    }
+}
+```
+
+##### 后序使用栈
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static void postOrder1(TreeNode head) {
+        out.println("post-order");
+        if (head != null) {
+            Stack<TreeNode> s1 = new Stack<>();
+            Stack<TreeNode> s2 = new Stack<>();
+            s1.push(head);
+            while (!s1.isEmpty()) {
+                head = s1.pop();
+                s2.push(head);
+                if (head.left != null) {
+                    s1.push(head.left);
+                }
+                if (head.right != null) {
+                    s1.push(head.right);
+                }
+            }
+            while (!s2.isEmpty()) {
+                out.print(s2.pop() + " ");
+            }
+        }
+        out.println();
+    }
+
+    public static void postOrder2(TreeNode head) {
+        out.println("post-order");
+        if (head != null) {
+            Stack<TreeNode> stack = new Stack<>();
+            stack.push(head);
+            TreeNode c = null;
+            TreeNode h = head; // h永远指向上一个输出的节点
+            while (!stack.isEmpty()) {
+                c = stack.peek();
+                if (c.left != null && h != c.left && h != c.right) { // 如果h不是栈顶节点的右子节点，也不是左子节点，那么很明显，我们还没有遍历过栈顶元素的左子树，那么就将左子树的根节点入栈
+                    stack.push(c.left);
+                } else if (c.right != null && h != c.right) { // 如果上一个输出的节点不是当前节点的右子树，那么就将右子树的根节点进栈。
+                    stack.push(c.right);
+                } else { // 如果都不满足，说明左右子树都被遍历过了，弹出栈顶的元素并输出
+                    out.print(stack.pop() + " ");
+                    h = c;
+                }
+            }
+        }
+        out.println();
+    }
+}
+```
+
+###### 解法一
+
+参考上面的第一种后序遍历的方式，我们可以发现，这种方法其实是参考的前序遍历的方法。在前序遍历中，我们首先将右子树的根节点入栈，再将左子树的根节点入栈，这样在出栈的时候就可以反过来。那么如果输出当前节点，然后先左子树的根节点入栈，再右子树的根节点入栈，我们就可以实现中，右，左的顺序依次输出，但是这个顺序正好和需要的顺序相反，因此需要一个额外的栈进行逆序操作。
+
+###### 解法二
 
 
 
