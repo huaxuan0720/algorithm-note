@@ -231,6 +231,262 @@ class Solution {
 }
 ```
 
+### 递归
+
+#### 字符串的全部子序列
+
+简单的递归问题，代码略
+
+#### 字符串的全排列（含重）
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static ArrayList<String> permutation(String str) {
+        ArrayList<String> res = new ArrayList<>();
+        if (str == null || str.length() == 0) {
+            return res;
+        }
+        char[] chs = str.toCharArray();
+        process(chs, 0, res);
+        return res;
+    }
+
+    private static void process(char[] str, int i, ArrayList<String> ans) {
+        if (i == str.length) {
+            ans.add(String.valueOf(str));
+            return;
+        }
+
+        for (int j = i; j < str.length; j++) {
+            swap(str, i, j);
+            process(str, i + 1, ans);
+            swap(str, i, j);
+        }
+    }
+
+    private static void swap(char[] str, int i, int j) {
+        char t = str[i];
+        str[i] = str[j];
+        str[j] = t;
+    }
+}
+```
+
+
+
+#### 字符串的全排列（不含重复）
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static ArrayList<String> permutation(String str) {
+        ArrayList<String> res = new ArrayList<>();
+        if (str == null || str.length() == 0) {
+            return res;
+        }
+        char[] chs = str.toCharArray();
+        process(chs, 0, res);
+        return res;
+    }
+
+    private static void process(char[] str, int i, ArrayList<String> ans) {
+        if (i == str.length) {
+            ans.add(String.valueOf(str));
+            return;
+        }
+
+        boolean[] visited = new boolean[26];
+        for (int j = 0; j < 26; j++) {
+            visited[j] = false;
+        }
+        for (int j = i; j < str.length; j++) {
+            if (!visited[str[j] - 'a']) { // 分支限界，如果当前的字符已经交换过，就直接跳过
+                visited[str[j] - 'a'] = true;
+                swap(str, i, j);
+                process(str, i + 1, ans);
+                swap(str, i, j);
+            }
+        }
+    }
+
+    private static void swap(char[] str, int i, int j) {
+        char t = str[i];
+        str[i] = str[j];
+        str[j] = t;
+    }
+}
+```
+
+
+
+#### 数字串转化成字符串
+
+规定1和A对应，2和B对应，3和C对应，那么一个数字字符串比如"111"，可以转化成"AAA"，"KA"，"AK"。
+
+给定一个只有数字字符组成的字符串str，返回有多少种转化的结果。
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int ways(String s) {
+        if (s == null || s.isEmpty()) {
+            return 0;
+        }
+        return process(s.toCharArray(), 0);
+    }
+
+    private static int process(char[] str, int i) {
+        if (i == str.length) {
+            return 1;
+        }
+
+        // 因为数字不会以0开头，所以直接返回0
+        if (str[i] == '0') {
+            return 0;
+        }
+
+        // 10 ~ 19
+        if (str[i] == '1') {
+            int res = process(str, i + 1);
+            if (i + 1 < str.length) {
+                res += process(str, i + 2);
+            }
+            return res;
+        }
+
+        // 20 ~ 26, 注意，字符数字只会对应到26
+        if (str[i] == '2') {
+            int res = process(str, i + 1);
+            if (i + 1 < str.length && '0' <= str[i] && str[i] <= '6') {
+                res += process(str, i + 2);
+            }
+            return res;
+        }
+
+        // 因为最多对应到26，所以只会取第一个
+        return process(str, i + 1);
+    }
+}
+```
+
+#### N皇后问题
+
+**n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并且使皇后彼此之间不能相互攻击。**
+
+![在这里插入图片描述](..\images\N-queens.png)
+
+##### 常规的递归解法
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int queens(int n) {
+        if (n < 2) {
+            return 0;
+        }
+        int[] record = new int[n];
+        return process(0, record, n);
+    }
+
+    // 处理第i行的皇后位置
+    // 返回摆完所有的皇后之后所有的解法，可能为0
+    private static int process(int i, int[] record, int n) {
+        if (i == n) { // 如果达到了最后一个位置，返回1
+            return 1;
+        }
+        // 如果没有达到最后一个位置
+        int res = 0;
+        for (int j = 0; j < n; j++) { // 对当前行的每一个列的位置进行尝试
+            if (isValid(record, i, j)) { // 如果i行的j列可以放一个皇后
+                record[i] = j; // 更新当前行的皇后的位置
+                res += process(i + 1, record, n); // 对i + 1行进行求解
+            }
+        }
+        return res;
+    }
+
+    // 对当前行row的col位置，判断和之前的（row行之前 0 ~ row - 1）所有的行的皇后是否有冲突
+    private static boolean isValid(int[] record, int row, int col) {
+        for (int k = 0; k < row; k++) {
+            if (col == record[k] || Math.abs(record[k] - col) == Math.abs(row - k)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        out.println(queens(15));
+    }
+}
+```
+
+##### 利用位运算进行求解
+
+考察上面的问题，我们发现我们会有三个限制（除了行的限制之外），一个是列限制，一个是左斜对角线上的限制，一个是右斜对角线上的限制。那么我们就用3个整数去表示这三个限制，由于Int类型的数据只有32位，因此这个方法一般不能求解超过32的N皇后问题。
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int queens(int n) {
+        if (n < 2 || n > 32) {
+            return 0;
+        }
+        // limit的最右侧是连续的n个1，在求解的过程中，limit始终保持不变
+        int limit = n == 32 ? -1 : (1 << n) - 1;
+        return process(limit, 0, 0, 0);
+    }
+
+    /**
+     * limit参数确定了问题的皇后的数目
+     * @param limit : 问题结束时的列的状态
+     * @param colLimit : 列的限制，如果其中的某一个位置的bit是1，那么表示该位置不能放置皇后
+     * @param leftDiaLimit : 左斜对角线上的限制，规则和列限制相同
+     * @param rightDiaLimit : 右斜对角线上的限制，规则和列限制相同
+     * @return : N 皇后的所有的解法
+     */
+    private static int process(int limit, int colLimit, int leftDiaLimit, int rightDiaLimit) {
+        if (colLimit == limit) {
+            return 1;
+        }
+
+        // 将所有的限制进行或操作，表示的所有的被占用的位置（被占用的位置是1，未被占用的位置是0），
+        // 取反之后，所有的被占用的位置都变成了0，未被占用的位置变成了1
+        // 和limit进行与操作表示的是将开头的32-n的bit位清零，消除前置无效数据的影响
+        // 经过下面的代码之后，所有的可能的放置的位点都是1，不能放置的都是0
+        int pos = limit & (~(colLimit | leftDiaLimit | rightDiaLimit));
+
+        int mostRightOne = 0; // 记录最右侧的1的情况，如果最右侧的第三个位置是1，那么这个数字最后变成00^00100
+        int res = 0;
+        while (pos != 0) {
+            mostRightOne = pos & (~pos + 1); // 计算最右侧的1的位置
+            pos = pos ^ mostRightOne; // 异或运算表示消除了最右侧的那个1，让这个位置的数据变成0，然后就可以接着找最右侧的1
+            res += process(limit,
+                    colLimit | mostRightOne, // 列限制和最右侧的那个1进行或操作，将那个位置的列限制变成1，表示该位置已经被占用了。
+                    (leftDiaLimit | mostRightOne) << 1, // 左斜对角线和最右侧的那个1或操作之后，**左移一位**。因为我们或完之后，其实还是在具体的那一个列，因此需要左移
+                    (rightDiaLimit | mostRightOne) >>> 1); // 同上，只不过需要右移一位，而且是不带符号的右移一位
+        }
+        return res;
+    }
+
+    public static void main(String[] args) {
+        out.println(queens(15));
+    }
+}
+```
+
+
+
+
+
+
+
 
 
 

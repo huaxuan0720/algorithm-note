@@ -98,11 +98,88 @@ class Solution {
 
 ###### 解法二
 
+#### 二叉树中两个节点之间的最远距离
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static class Info {
+        public int height;
+        public int maxDistance;
+
+        public Info(int height, int maxDistance) {
+            this.height = height;
+            this.maxDistance = maxDistance;
+        }
+    }
+
+    public static int function(TreeNode root) {
+        return process(root).maxDistance;
+    }
+
+    private static Info process(TreeNode node) {
+        if (node == null) {
+            return new Info(0, 0);
+        }
+        Info leftInfo = process(node.left);
+        Info rightInfo = process(node.right);
+
+        int height = Math.max(leftInfo.height, rightInfo.height) + 1;
+
+        int maxDistance = Math.max(leftInfo.height + rightInfo.height + 1, Math.max(leftInfo.maxDistance, rightInfo.maxDistance));
+        return new Info(height, maxDistance);
+    }
+}
+```
+
 
 
 ### 二叉树的典型：搜索树
 
 ### 二叉树的规范：平衡树
+
+#### 判断二叉树是否平衡
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static class Info {
+        public int height;
+        public boolean isBalanced;
+
+        public Info(int height, boolean isBalanced) {
+            this.height = height;
+            this.isBalanced = isBalanced;
+        }
+    }
+
+    private static boolean function(TreeNode root){
+        return process(root).isBalanced;
+    }
+    
+    private static Info process(TreeNode node) {
+        if (node == null) {
+            return new Info(0, true);
+        }
+        Info leftInfo = process(node.left);
+        Info rightInfo = process(node.right);
+
+        int height = Math.max(leftInfo.height, rightInfo.height) + 1;
+        boolean isBalanced = true;
+
+        if (!leftInfo.isBalanced || !rightInfo.isBalanced || Math.abs(leftInfo.height - rightInfo.height) > 1) {
+            isBalanced = false;
+        }
+        return new Info(height, isBalanced);
+    }
+}
+```
+
+
+
+
 
 ### 平衡树的条件放松的版本：红黑树
 
@@ -303,6 +380,72 @@ class Solution{
         int leftSize = mid - l2;
         process2(pre, l1 + 1, l1 + leftSize, in, l2, mid - 1, pos, l3, l3 + leftSize - 1, inMap);
         process2(pre, l1 + leftSize + 1, r1, in, mid + 1, r2, pos, l3 + leftSize, r3 - 1, inMap);
+    }
+}
+```
+
+### 二叉树的中序遍历的后序节点
+
+```java
+class TreeNode{
+    int value;
+    TreeNode left;
+    TreeNode right;
+    TreeNode parent;
+}
+```
+
+定义一个由上述节点构成的二叉树，给定一个节点数据，返回中序遍历中该节点的直接后驱节点。
+
+#### 解法
+
+一共存在两种情况：
+
+- 如果当前节点包含一棵右子树，那么右子树的最左的节点就是当前节点的直接后驱节点
+- 如果当前节点不包含右子树，那么我们需要向上遍历，如果当前的节点是其父亲的左子树，那么毫无疑问，我们就可以确定的是，其父亲节点就是当前节点的直接后驱节点。如果当前节点是其父亲的右子树，那么我们就必须继续向上找，将当前节点设置为其父亲节点，然后继续上找，直到当前节点是其父亲节点的左子树的根节点或者其父亲节点为空。
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    static class TreeNode {
+        int value;
+        TreeNode left;
+        TreeNode right;
+        TreeNode parent;
+
+        TreeNode(int value) {
+            this.value = value;
+            left = null;
+            right = null;
+            parent = null;
+        }
+    }
+
+    public static TreeNode getSuccessorNode(TreeNode node) {
+        if (node == null) {
+            return null;
+        }
+        if (node.right != null) {
+            return getLeftMost(node.right);
+        }
+
+        TreeNode parent = node.parent;
+        while (parent != null && parent.right == node) {
+            node = parent;
+            parent = node.parent;
+        }
+        return parent;
+    }
+
+    private static TreeNode getLeftMost(TreeNode node) {
+        if (node == null) {
+            return null;
+        }
+        while (node.left != null) {
+            node = node.left;
+        }
+        return node;
     }
 }
 ```

@@ -735,9 +735,9 @@ public class Solution {
             rightInfo.start.left = x;
         }
         return new Info(
-            	// 整棵树的头
+                // 整棵树的头
                 leftInfo.start != null? leftInfo.start: x,
-            	// 整棵树的尾
+                // 整棵树的尾
                 rightInfo.end != null ? rightInfo.end: x
         );
     }

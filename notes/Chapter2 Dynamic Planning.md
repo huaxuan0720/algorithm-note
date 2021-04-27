@@ -273,6 +273,88 @@ class Solution{
 
 #### 动态规划技巧之空间压缩 
 
+### 背包问题之二
+
+给定两个长度都为N的数组，weights和values。weights[i]和values[i]分别代表i号物品的重量和价值。给定一个最大载重为bag（一个正数）的背包，装的物品不能超过这个重量，返回可以装下的物品的最大的价值。
+
+#### 解法一：暴力递归
+
+###### 暴力递归1
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int getMaxValue(int[] weights, int[] values, int bag) {
+        return process(weights, values, 0, 0, bag);
+    }
+
+    // 固定参数 w, v, bag
+    // 如果该函数返回-1， 认为没有方案
+    // 如果该函数没有返回-1，认为返回的值是真实的价值
+    public static int process(int[] w, int[] v, int index, int alreadyW, int bag) {
+        if (alreadyW > bag) {
+            return -1;
+        }
+        if (index == w.length) {
+            return 0;
+        }
+
+        // 当前的货物没有放入背包
+        int p1 = process(w, v, index + 1, alreadyW, bag);
+
+        // 尝试将当前的货物放入背包
+        int p2Next = process(w, v, index + 1, alreadyW + w[index], bag);
+
+        int p2 = -1;
+        if (p2Next != -1) { // 如果可以将当前的货物放入背包，就当前货物的价值加上
+            p2 = p2Next + v[index];
+        }
+        return Math.max(p1, p2); // 取两者的最大值
+    }
+}
+```
+
+###### 暴力递归2
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int getMaxValue(int[] weights, int[] values, int bag) {
+        return process(weights, values, 0, bag);
+    }
+
+    // 固定参数 w, v, bag
+    // rest参数表示背包还剩的空间
+    // 如果该函数返回-1， 认为没有方案
+    // 如果该函数没有返回-1，认为返回的值是真实的价值
+    public static int process(int[] w, int[] v, int index, int rest) {
+        if (rest < 0) {
+            return -1;
+        }
+        if (index == w.length) {
+            return 0;
+        }
+
+        // 选择不将当前的货物放入背包
+        int p1 = process(w, v, index + 1, rest);
+
+        // 尝试将当前的货物放入背包
+        int p2 = -1;
+        int p2Next = process(w, v, index + 1, rest - w[index]);
+        if (p2Next != -1) {
+            p2 = p2Next + v[index];
+        }
+        return Math.max(p1, p2);
+    }
+}
+```
+
+
+
+
+
 ### 最长公共子串
 
 ```java
@@ -680,3 +762,133 @@ public class Solution {
 如果我们观察仔细一点，可以发现，我们每次对一个字串都建立一张新的dp表格，实际上可以对这一步进行优化。
 
 例如从0开始的所有字串，依次为基础构建的dp表格其实是逐渐增加的，这一步其实可以优化成如下，从0开始的剩下的字串，求解和目标串的编辑距离，然后对最后一行进行统计，计算出其中的最小值，然后对从1开始的剩下的字串，求解和目标串的编辑距离，统计最后一行的最小值，然后再依次循环下去。
+
+### 取纸牌问题
+
+给定一个整型数组arr，代表树脂补贴的纸牌排成一条线。玩家A和玩家B依次拿走每张纸牌，规定玩家A先拿，玩家B后拿。
+
+但是每次玩家只能拿走最左或者最后的纸牌。
+
+玩家A和玩家B都绝顶聪明，请返回最后获胜者的分数。
+
+#### 解法
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int win(int[] cards) {
+        if (cards == null || cards.length == 0) {
+            return 0;
+        }
+        return Math.max(firstHand(cards, 0, cards.length - 1), // A 先手的最大值
+                lastHand(cards, 0, cards.length - 1)); // B 后手的最大值
+    }
+
+    // 对于任何一个玩家来说此时轮到他选牌
+    public static int firstHand(int[] cards, int left, int right) {
+        if (left == right) { // 如果只有一张牌了，只能选择这张牌
+            return cards[left];
+        }
+        // 拿走的最左侧的牌和拿走的最右侧的牌，两者取最大值。
+        // 因为此时是当前的玩家取牌，因此一定要取最大值
+        return Math.max(
+                cards[left] + lastHand(cards, left + 1, right), // 当前的玩家拿走了最左侧的牌，那么下一次取牌，他就变成了后手取牌
+                cards[right] + lastHand(cards, left, right - 1) // 当前的玩家拿走了最右侧的牌，同样，下一次取牌，他就变成了后手取牌。
+        );
+    }
+
+    // 对于任何一个玩家来说此时不轮到他选牌
+    public static int lastHand(int[] cards, int left, int right) {
+        if (left == right) {// 如果只有一张牌，那么很明显，这张牌会被对方选择走
+            return 0;
+        }
+
+        // 对方的玩家拿走了最左侧的牌和最右侧的牌的两种情况，对方一定会留给你最差的情况，因此需要取最小值
+        return Math.min(
+                firstHand(cards, left + 1, right),  // 对方拿走了最左侧的牌
+                firstHand(cards, left, right - 1)  // 对方拿走了最右侧的牌
+        );
+    }
+}
+```
+
+### 机器人移动问题
+
+![image-20210427225038059](..\images\image-20210427225038059.png)
+
+#### 解法一：暴力递归
+
+这一题是可以使用暴力递归进行求解的
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int ways(int N, int M, int K, int P) {
+        if (N < 2 || K < 1 || M < 1 || M > N || P < 1 || P > N) {
+            return 0;
+        }
+        return walk(N, M, K, P);
+    }
+
+    private static int walk(int N, int cur, int rest, int P) {
+        if (rest == 0) {
+            return cur == P ? 1 : 0;
+        }
+
+        if (cur == 1) {
+            return walk(N, 2, rest - 1, P);
+        }
+
+        if (cur == N) {
+            return walk(N, N - 1, rest - 1, P);
+        }
+        return walk(N, cur - 1, rest - 1, P) + walk(N, cur + 1, rest - 1, P);
+    }
+}
+```
+
+#### 解法二：带有备忘录的暴力递归
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int ways(int N, int M, int K, int P) {
+        if (N < 2 || K < 1 || M < 1 || M > N || P < 1 || P > N) {
+            return 0;
+        }
+        int[][] dp = new int[N + 1][K + 1];
+        for (int row = 0; row <= N; row++) {
+            for (int col = 0; col <= K + 1; col++) {
+                dp[row][col] = -1;
+            }
+        }
+        return walk(N, M, K, P, dp);
+    }
+
+    private static int walk(int N, int cur, int rest, int P, int[][] dp) {
+        if (dp[cur][rest] != -1) {
+            return dp[cur][rest];
+        }
+        if (rest == 0) {
+            dp[cur][rest] = cur == P ? 1 : 0;
+            return dp[cur][rest];
+        }
+
+        if (cur == 1) {
+            dp[cur][rest] = walk(N, cur + 1, rest - 1, P, dp);
+            return dp[cur][rest];
+        }
+        if (cur == N) {
+            dp[cur][rest] = walk(N, cur - 1, rest - 1, P, dp);
+            return dp[cur][rest];
+        }
+        dp[cur][rest] = walk(N, cur - 1, rest - 1, P, dp) + walk(N, cur + 1, rest - 1, P, dp);
+        return dp[cur][rest];
+
+    }
+}
+```
+
