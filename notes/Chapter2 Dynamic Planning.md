@@ -212,7 +212,7 @@ class Solution{
 
 ### 背包问题
 
-背包容量为w，一共有n袋零食，第i袋的零食的体积为$v[i]$，其中$v[i] \gt 0$。在零食的综艺及不超过背包容量的情况下，一共有多少种零食放法。（总体积为0也算一种方法）
+背包容量为w，一共有n袋零食，第i袋的零食的体积为$v[i]$，其中$v[i] \gt 0$。在零食的总容量不超过背包容量的情况下，一共有多少种零食放法。（总体积为0也算一种方法）
 
 #### 解法一：深度优先
 
@@ -771,7 +771,7 @@ public class Solution {
 
 玩家A和玩家B都绝顶聪明，请返回最后获胜者的分数。
 
-#### 解法
+#### 递归解法
 
 ```java
 class Solution {
@@ -812,6 +812,10 @@ class Solution {
     }
 }
 ```
+
+#### 动态规划解法
+
+
 
 ### 机器人移动问题
 
@@ -888,6 +892,53 @@ class Solution {
         dp[cur][rest] = walk(N, cur - 1, rest - 1, P, dp) + walk(N, cur + 1, rest - 1, P, dp);
         return dp[cur][rest];
 
+    }
+}
+```
+
+#### 解法三：动态规划
+
+实际上，解法二就是一个简单的
+
+### 数字串转化成字母串
+
+#### 常规递归解法
+
+见Chapter 1的**数字串转化成字符串**。
+
+#### 使用动态规划
+
+```java
+class Solution {
+    static PrintStream out = System.out;
+
+    public static int ways1(String s) {
+        if (s == null || s.length() == 0) {
+            return 0;
+        }
+        char[] str = s.toCharArray();
+
+        int N = str.length;
+        int[] dp = new int[N + 1];
+        dp[N] = 1;
+        for (int i = N - 1; i >= 0; i--) {
+            if (str[i] == '0') {
+                dp[i] = 0;
+            } else if (str[i] == '1') {
+                dp[i] = dp[i + 1];
+                if (i + 1 < N) {
+                    dp[i] += dp[i + 2];
+                }
+            } else if (str[i] == '2') {
+                dp[i] = dp[i + 1];
+                if (i + 1 < str.length && '0' <= str[i] && str[i] <= '6') {
+                    dp[i] += dp[i + 2];
+                }
+            } else {
+                dp[i] = dp[i + 1];
+            }
+        }
+        return dp[0];
     }
 }
 ```
